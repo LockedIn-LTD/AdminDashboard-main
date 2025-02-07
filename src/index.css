@@ -1,0 +1,219 @@
+/* General Page Styles */
+body {
+  font-family: "Poppins", Arial, sans-serif;
+  background-color: #3D9970;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  width: 100%;
+  background-color: white;
+  border-bottom: 1px solid #000000;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.navbar .logo img {
+  width: 180px;
+  height: auto;
+}
+
+.navbar .menu {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.navbar .menu a {
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  margin: 0 20px;
+}
+
+.navbar .menu a:hover {
+  text-decoration: underline;
+}
+
+/* Dashboard */
+.title {
+  text-align: center;
+  font-size: 24px;
+  margin-top: 80px; /* extra top margin to account for the fixed navbar */
+  color: white;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 20px;
+  margin: 20px auto;
+  width: 90%;
+  max-width: 800px;
+}
+
+.add-driver {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.add-driver .icon {
+  fill: rgb(0, 0, 0);
+}
+
+.search-bar {
+  padding: 8px;
+  width: 200px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.sort-dropdown {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Driver Cards */
+.drivers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  padding: 20px;
+  width: 100%;
+  max-width: 1200px;
+  justify-items: center;
+}
+
+.driver-card {
+  width: 200px;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.red {
+  background-color: #ffcccc;
+}
+
+.green {
+  background-color: #ccffcc;
+}
+
+.yellow {
+  background-color: #ffffcc;
+}
+
+.gray {
+  background-color: #f0f0f0;
+}
+
+.card-buttons button {
+  margin: 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.card-buttons button:hover {
+  background-color: #ddd;
+}
+
+/* Login Container */
+.login-container {
+  background-color: #3D9970;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+/* Logo */
+.login-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lock-icon {
+  width: 640px;
+  height: 500px;
+}
+
+/* Input Fields */
+.login-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 12px;
+  margin: 12px 0;
+  border-radius: 25px;
+  border: none;
+  text-align: center;
+  font-size: 16px;
+}
+
+/* Forgot Password */
+.forgot-password {
+  font-size: 14px;
+  color: white;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+/* Sign In Button */
+.login-button {
+  width: 100%;
+  max-width: 300px;
+  padding: 14px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 25px;
+  font-size: 18px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.login-button:hover {
+  background-color: #d9d9d9;
+}
+
+/* Signup Text */
+.signup-text {
+  font-size: 14px;
+  color: white;
+  margin-top: 12px;
+}
+
+.signup-text a {
+  color: white;
+  font-weight: bold;
+  text-decoration: underline;
+  cursor: pointer;
+}
