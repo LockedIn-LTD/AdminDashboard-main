@@ -1,22 +1,38 @@
-import React from "react";
+import React, { useState } from "react";
 import "./index.css";
 
-const drivers = [
-  { name: "Dan Ionescu", status: "Severe", driving: "Yes", color: "red" },
-  { name: "Joe Smith", status: "LockedIn", driving: "Yes", color: "green" },
-  { name: "Joe Smith", status: "Unstable", driving: "Yes", color: "yellow" },
-  { name: "Joe Smith", status: "Idle", driving: "No", color: "gray" },
-  { name: "Alice Johnson", status: "Active", driving: "Yes", color: "green" },
-  { name: "Bob Williams", status: "Inactive", driving: "No", color: "gray" },
-  // Add more driver objects as needed
-];
-
 const Dashboard = () => {
+  // Initialize drivers as state
+  const [drivers, setDrivers] = useState([
+    { name: "Dan Ionescu", status: "Severe", driving: "Yes", color: "red" },
+    { name: "Joe Smith", status: "LockedIn", driving: "Yes", color: "green" },
+    { name: "Joe Smith", status: "Unstable", driving: "Yes", color: "yellow" },
+    { name: "Joe Smith", status: "Idle", driving: "No", color: "gray" },
+    { name: "Alice Johnson", status: "Active", driving: "Yes", color: "green" },
+    { name: "Bob Williams", status: "Inactive", driving: "No", color: "gray" },
+  ]);
+
+  // Handler to add a new driver card
+  const handleAddDriver = () => {
+    const newDriver = {
+      name: `New Driver ${drivers.length + 1}`,
+      status: "Idle",
+      driving: "No",
+      color: "gray",
+    };
+    setDrivers([...drivers, newDriver]);
+  };
+
+  // Handler to remove a driver card by index
+  const handleRemoveDriver = (index) => {
+    setDrivers(drivers.filter((_, i) => i !== index));
+  };
+
   return (
     <div>
       <nav className="navbar">
         <div className="logo">
-          <img src="/images/logo.png" alt="LockedIn Logo" />
+          <img src="logo.png" alt="LockedIn Logo" />
         </div>
         <div className="menu">
           <a href="#">Dashboard</a>
@@ -29,12 +45,12 @@ const Dashboard = () => {
       <h2 className="title">Connected Drivers</h2>
 
       <div className="controls">
-        <button className="add-driver">
+        <button className="add-driver" onClick={handleAddDriver}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
-            fill="currentColor"
+            fill="black"
             className="icon"
             viewBox="0 0 16 16"
           >
@@ -60,7 +76,9 @@ const Dashboard = () => {
             <p>Driving: {driver.driving}</p>
             <div className="card-buttons">
               <button>Edit Driver</button>
-              <button>Remove Driver</button>
+              <button onClick={() => handleRemoveDriver(index)}>
+                Remove Driver
+              </button>
             </div>
           </div>
         ))}
