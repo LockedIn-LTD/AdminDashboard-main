@@ -4,7 +4,7 @@ import "./index.css";
 const Dashboard = () => {
   // Initialize drivers as state
   const [drivers, setDrivers] = useState([
-    { name: "Dan Ionescu", status: "Severe", driving: "Yes", color: "red" },
+    { name: "David Brown", status: "Severe", driving: "Yes", color: "red" },
     { name: "Joe Smith", status: "LockedIn", driving: "Yes", color: "green" },
     { name: "Joe Smith", status: "Unstable", driving: "Yes", color: "yellow" },
     { name: "Joe Smith", status: "Idle", driving: "No", color: "gray" },
@@ -70,7 +70,12 @@ const Dashboard = () => {
       <div className="drivers-grid">
         {drivers.map((driver, index) => (
           <div key={index} className={`driver-card ${driver.color}`}>
-            <p className="profile">Profile Picture</p>
+            {/* Default profile picture for each driver */}
+            <img
+              src="/images/profile.png"
+              alt="Profile"
+              className="profile"
+            />
             <h3>{driver.name}</h3>
             <p>Status: {driver.status}</p>
             <p>Driving: {driver.driving}</p>
