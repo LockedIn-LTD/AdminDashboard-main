@@ -51,7 +51,7 @@ body {
 /* Dashboard */
 .title {
   text-align: center;
-  font-size: 24px;
+  font-size: 54px;
   margin-top: 80px; /* extra top margin to account for the fixed navbar */
   color: white;
 }
@@ -111,6 +111,15 @@ body {
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile {
+  width: 120px;  /* Adjust size as needed */
+  height: 120px; /* Ensure it remains a perfect circle */
+  border-radius: 50%; /* Makes it circular */
+  object-fit: cover; /* Ensures the image fills the circle properly */
+  display: block;
+  margin: 10px auto; /* Centers the image */
 }
 
 .red {
