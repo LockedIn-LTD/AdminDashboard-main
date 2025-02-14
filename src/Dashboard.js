@@ -32,7 +32,7 @@ const Dashboard = () => {
     <div>
       <nav className="navbar">
         <div className="logo">
-          <img src="logo.png" alt="LockedIn Logo" />
+          <img src={`${process.env.PUBLIC_URL}/images/DriveSense_Brand.png`} alt="DriveSense Logo" />
         </div>
         <div className="menu">
           <a href="#">Dashboard</a>
@@ -61,9 +61,13 @@ const Dashboard = () => {
         </button>
         <input type="text" placeholder="Search" className="search-bar" />
         <select className="sort-dropdown">
-          <option>Recently Added</option>
-          <option>Severity</option>
-          <option>Alphabetically</option>
+        <option selected disabled hidden>Sort by</option> {/**default display */}
+        <option>None</option> {/**none */}
+          <option>Newest</option>
+          <option>Oldest</option>
+          <option>Status</option> {/*Sort by severity of condition*/}
+          <option>Activity</option> {/*Sort by driving or not*/}
+          <option>Name</option>
         </select>
       </div>
 
@@ -73,7 +77,7 @@ const Dashboard = () => {
             {/* Default profile picture for each driver */}
             <img
               src="/images/profile.png"
-              alt="Profile"
+              alt="Profile picture"
               className="profile"
             />
             <h3>{driver.name}</h3>
