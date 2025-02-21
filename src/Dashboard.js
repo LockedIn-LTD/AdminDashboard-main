@@ -11,7 +11,15 @@ const Dashboard = () => {
     { name: "Alice Johnson", status: "Active", driving: "Yes", color: "green" },
     { name: "Bob Williams", status: "Inactive", driving: "No", color: "gray" },
   ]);
+/** Code for sort function, unfinished
+  const [sortOption, setSortOption] = useState("Newest");
+  
+  const handleSortChange = (e) => {
+    setSortOption(e.targe.value);
+  }
 
+  const sortDrivers = (drivers, option) => {
+  }*/
   // Handler to add a new driver card
   const handleAddDriver = () => {
     const newDriver = {
