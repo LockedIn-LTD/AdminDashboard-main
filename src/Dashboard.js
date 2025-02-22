@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./index.css";
+import Navbar from "./Navbar";
 
 const Dashboard = () => {
   // Initialize drivers as state
@@ -43,10 +44,7 @@ const Dashboard = () => {
           <img src={`${process.env.PUBLIC_URL}/images/DriveSense_Brand.png`} alt="DriveSense Logo" />
         </div>
         <div className="menu">
-          <a href="#">Dashboard</a>
-          <a href="#">Manage Account</a>
-          <a href="#">Contact Us</a>
-          <a href="#">Sign Out</a>
+          <Navbar />
         </div>
       </nav>
 
