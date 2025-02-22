@@ -10,7 +10,7 @@ export default function Navbar() {
             <Link to="/Dashboard">Dashboard</Link>
             <Link to="/ManageAccount">Manage Account</Link>
             <Link to="/ContactUs">Contact Us</Link>
-            <Link to="/Login">Sign Out</Link>
+            <Link to="/">Sign Out</Link>
           </div>
         </nav>
     )
