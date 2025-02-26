@@ -7,20 +7,61 @@ const Dashboard = () => {
   const [drivers, setDrivers] = useState([
     { name: "David Brown", status: "Severe", driving: "Yes", color: "red" },
     { name: "Joe Smith", status: "LockedIn", driving: "Yes", color: "green" },
-    { name: "Joe Smith", status: "Unstable", driving: "Yes", color: "yellow" },
-    { name: "Joe Smith", status: "Idle", driving: "No", color: "gray" },
-    { name: "Alice Johnson", status: "Active", driving: "Yes", color: "green" },
-    { name: "Bob Williams", status: "Inactive", driving: "No", color: "gray" },
+    { name: "Joe Rogan", status: "Unstable", driving: "Yes", color: "yellow" },
+    { name: "John Adams", status: "Idle", driving: "No", color: "gray" },
+    { name: "Alice Johnson", status: "LockedIn", driving: "Yes", color: "green" },
+    { name: "Bob Williams", status: "Idle", driving: "No", color: "gray" },
   ]);
-/** Code for sort function, unfinished
-  const [sortOption, setSortOption] = useState("Newest");
   
+  const [sortOption, setSortOption] = useState("None");
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Handler to sort drivers
   const handleSortChange = (e) => {
-    setSortOption(e.targe.value);
-  }
+    const newSortOption = e.target.value;
+    setSortOption(newSortOption);
 
-  const sortDrivers = (drivers, option) => {
-  }*/
+    let sortedDrivers = [...drivers];
+    switch(newSortOption){
+      case "Name":
+        sortedDrivers.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "Status":
+        const statusOrder = {
+          "Severe": 3,
+          "Unstable": 2,
+          "LockedIn": 1,
+          "Idle": 0
+        };
+        sortedDrivers.sort((a, b) =>
+          statusOrder[b.status] - statusOrder[a.status] || a.name.localeCompare(b.name)
+        );
+        break;
+      case "Activity":
+          sortedDrivers.sort((a, b) =>
+            b.driving.localeCompare(a.driving) || a.name.localeCompare(b.name)
+          );
+        break;
+      case "Newest":
+          sortedDrivers.reverse();
+        break;
+      case "Oldest":
+        break;
+      case "None":
+          sortedDrivers = [...drivers];
+        break;
+      default:
+        break;
+    }
+
+    setDrivers(sortedDrivers);
+  };
+
+  // Handler to update search Query
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   // Handler to add a new driver card
   const handleAddDriver = () => {
     const newDriver = {
@@ -36,6 +77,10 @@ const Dashboard = () => {
   const handleRemoveDriver = (index) => {
     setDrivers(drivers.filter((_, i) => i !== index));
   };
+
+  const filteredDrivers = drivers.filter(driver =>
+    driver.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div>
@@ -65,8 +110,18 @@ const Dashboard = () => {
           </svg>
           Add Driver
         </button>
-        <input type="text" placeholder="Search" className="search-bar" />
-        <select className="sort-dropdown">
+        <input 
+          type="text" 
+          placeholder="Search by name" 
+          className="search-bar" 
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+        <select 
+          className="sort-dropdown"
+          value={sortOption}
+          onChange={handleSortChange}
+        >
         <option selected disabled hidden>Sort by</option> {/**default display */}
         <option>None</option> {/**none */}
           <option>Newest</option>
@@ -78,7 +133,7 @@ const Dashboard = () => {
       </div>
 
       <div className="drivers-grid">
-        {drivers.map((driver, index) => (
+        {filteredDrivers.map((driver, index) => (
           <div key={index} className={`driver-card ${driver.color}`}>
             {/* Default profile picture for each driver */}
             <img

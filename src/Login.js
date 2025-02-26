@@ -11,7 +11,7 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-logo">
-        <img src="/images/DriveSense_Brand.png" alt="DriveSenseLogo" className="main-icon" />
+        <img src="/images/DriveSenseLogo_noBackground.png" alt="DriveSenseLogo" className="main-icon" />
       </div>
 
       <input type="text" placeholder="Email or Username" className="login-input" />
