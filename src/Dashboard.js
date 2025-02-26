@@ -5,12 +5,12 @@ import Navbar from "./Navbar";
 const Dashboard = () => {
   // Initialize drivers as state
   const [drivers, setDrivers] = useState([
-    { name: "David Brown", status: "Severe", driving: "Yes", color: "red" },
-    { name: "Joe Smith", status: "LockedIn", driving: "Yes", color: "green" },
-    { name: "Joe Rogan", status: "Unstable", driving: "Yes", color: "yellow" },
-    { name: "John Adams", status: "Idle", driving: "No", color: "gray" },
-    { name: "Alice Johnson", status: "LockedIn", driving: "Yes", color: "green" },
-    { name: "Bob Williams", status: "Idle", driving: "No", color: "gray" },
+    { name: "David Brown", status: "Severe", driving: "Yes", color: "red", createdAt: new Date() },
+    { name: "Joe Smith", status: "LockedIn", driving: "Yes", color: "green", createdAt: new Date() },
+    { name: "Joe Rogan", status: "Unstable", driving: "Yes", color: "yellow", createdAt: new Date() },
+    { name: "John Adams", status: "Idle", driving: "No", color: "gray", createdAt: new Date() },
+    { name: "Alice Johnson", status: "LockedIn", driving: "Yes", color: "green", createdAt: new Date() },
+    { name: "Bob Williams", status: "Idle", driving: "No", color: "gray", createdAt: new Date() },
   ]);
   
   const [sortOption, setSortOption] = useState("None");
@@ -27,7 +27,8 @@ const Dashboard = () => {
         sortedDrivers.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case "Status":
-        const statusOrder = {
+        //sort by most severe to least severe
+        const statusOrder = { 
           "Severe": 3,
           "Unstable": 2,
           "LockedIn": 1,
@@ -38,14 +39,17 @@ const Dashboard = () => {
         );
         break;
       case "Activity":
+        //sort by driving to idle
           sortedDrivers.sort((a, b) =>
             b.driving.localeCompare(a.driving) || a.name.localeCompare(b.name)
           );
         break;
       case "Newest":
-          sortedDrivers.reverse();
+        //assumes the last in the list are newest, need to add timestamp attribute
+          sortedDrivers.sort((a, b) => b.createdAt - a.createdAt);
         break;
       case "Oldest":
+          sortedDrivers.sort((a, b) => a.createdAt - b.createdAt);
         break;
       case "None":
           sortedDrivers = [...drivers];
@@ -69,6 +73,7 @@ const Dashboard = () => {
       status: "Idle",
       driving: "No",
       color: "gray",
+      createdAt: new Date(),
     };
     setDrivers([...drivers, newDriver]);
   };
