@@ -16,7 +16,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 40px;
+  padding: 5px 40px;
   width: 100%;
   background-color: white;
   border-bottom: 1px solid #000000;
@@ -74,7 +74,11 @@ body {
   color: rgb(0, 0, 0);
   border: none;
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: 5px; 
+}
+
+.add-driver:hover {
+  background-color: #DDD;
 }
 
 .add-driver .icon {
@@ -169,9 +173,8 @@ body {
   align-items: center;
 }
 
-.lock-icon {
-  width: 640px;
-  height: 500px;
+.main-icon {
+
 }
 
 /* Input Fields */
