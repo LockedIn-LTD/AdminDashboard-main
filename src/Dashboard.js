@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./index.css";
+import Navbar from "./Navbar";
 
 const Dashboard = () => {
   // Initialize drivers as state
@@ -11,7 +12,15 @@ const Dashboard = () => {
     { name: "Alice Johnson", status: "Active", driving: "Yes", color: "green" },
     { name: "Bob Williams", status: "Inactive", driving: "No", color: "gray" },
   ]);
+/** Code for sort function, unfinished
+  const [sortOption, setSortOption] = useState("Newest");
+  
+  const handleSortChange = (e) => {
+    setSortOption(e.targe.value);
+  }
 
+  const sortDrivers = (drivers, option) => {
+  }*/
   // Handler to add a new driver card
   const handleAddDriver = () => {
     const newDriver = {
@@ -32,13 +41,10 @@ const Dashboard = () => {
     <div>
       <nav className="navbar">
         <div className="logo">
-          <img src="logo.png" alt="LockedIn Logo" />
+          <img src={`${process.env.PUBLIC_URL}/images/DriveSense_Brand.png`} alt="DriveSense Logo" />
         </div>
         <div className="menu">
-          <a href="#">Dashboard</a>
-          <a href="#">Manage Account</a>
-          <a href="#">Contact Us</a>
-          <a href="#">Sign Out</a>
+          <Navbar />
         </div>
       </nav>
 
@@ -61,9 +67,13 @@ const Dashboard = () => {
         </button>
         <input type="text" placeholder="Search" className="search-bar" />
         <select className="sort-dropdown">
-          <option>Recently Added</option>
-          <option>Severity</option>
-          <option>Alphabetically</option>
+        <option selected disabled hidden>Sort by</option> {/**default display */}
+        <option>None</option> {/**none */}
+          <option>Newest</option>
+          <option>Oldest</option>
+          <option>Status</option> {/*Sort by severity of condition*/}
+          <option>Activity</option> {/*Sort by driving or not*/}
+          <option>Name</option>
         </select>
       </div>
 
@@ -73,7 +83,7 @@ const Dashboard = () => {
             {/* Default profile picture for each driver */}
             <img
               src="/images/profile.png"
-              alt="Profile"
+              alt="Profile picture"
               className="profile"
             />
             <h3>{driver.name}</h3>
