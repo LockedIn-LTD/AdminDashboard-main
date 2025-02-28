@@ -5,6 +5,8 @@ import Dashboard from "./Dashboard";
 import ManageAccount from "./ManageAccount";
 import ContactUs from "./ContactUs";
 import Navbar from './Navbar';
+import ForgotPassword from "./ForgotPassword";
+import CreateAccount from "./CreateAccount";
 
 function App() {
   
@@ -17,6 +19,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/contactus" element={<ContactUs />} />
         <Route path="/manageaccount" element={<ManageAccount />} />
+        <Route path="/forgotpassword" element={<ForgotPassword />} />
+        <Route path="/createaccount" element={<CreateAccount />} />
       </Routes>
     </Router>
   );
