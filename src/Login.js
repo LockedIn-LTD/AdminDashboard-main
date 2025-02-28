@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link} from "react-router-dom";
 
 function Login() {
   const navigate = useNavigate(); // Hook for navigation
@@ -11,19 +11,17 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-logo">
-        <img src="/images/DriveSense_Brand.png" alt="DriveSenseLogo" className="main-icon" />
+        <img src="/images/DriveSenseLogo_noBackground.png" alt="DriveSenseLogo" className="main-icon" />
       </div>
 
       <input type="text" placeholder="Email or Username" className="login-input" />
       <input type="password" placeholder="Password" className="login-input" />
 
-      <a href="#" className="forgot-password">Forgot Password?</a>
+      <Link to="/forgotpassword" className="forgot-password">Forgot Password?</Link>
 
       <button className="login-button" onClick={handleSignIn}>Sign In</button>
 
-      <p className="signup-text">
-        Don’t have an account? <a href="#">Sign up now</a>
-      </p>
+      <p className="signup-text">Don’t have an account? <Link to="/createaccount">Sign up now</Link></p>
     </div>
   );
 }
