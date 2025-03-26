@@ -1,7 +1,7 @@
 /* General Page Styles */
 body {
   font-family: "Poppins", Arial, sans-serif;
-  background-color: #3D9970;
+  background-color: #ffffff;
   margin: 0;
   padding: 0;
   display: flex;
@@ -9,6 +9,7 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  color: white;
 }
 
 /* Navbar */
@@ -19,7 +20,7 @@ body {
   padding: 5px 40px;
   width: 100%;
   background-color: white;
-  border-bottom: 1px solid #000000;
+  border-bottom: 3px solid #3D9970;
   box-sizing: border-box;
   position: fixed;
   top: 0;
@@ -46,14 +47,15 @@ body {
 
 .navbar .menu a:hover {
   text-decoration: underline;
+  color: #3D9970;
 }
 
 /* Dashboard */
 .title {
   text-align: center;
   font-size: 54px;
-  margin-top: 80px; /* extra top margin to account for the fixed navbar */
-  color: white;
+  margin-top: 80px;
+  color: #3D9970;
 }
 
 .controls {
@@ -70,32 +72,34 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px;
-  background-color: #ffffff;
-  color: rgb(0, 0, 0);
-  border: none;
+  background-color: white;
+  color: black;
+  border: 2px solid #3D9970;
   cursor: pointer;
-  border-radius: 5px; 
+  border-radius: 5px;
+  font-weight: bold;
 }
 
 .add-driver:hover {
-  background-color: #DDD;
+  background-color: #f0f0f0;
 }
 
 .add-driver .icon {
-  fill: rgb(0, 0, 0);
+  fill: black;
 }
 
 .search-bar {
   padding: 8px;
   width: 200px;
-  border: 1px solid #ccc;
+  border: 2px solid #3D9970;
   border-radius: 5px;
 }
 
 .sort-dropdown {
   padding: 8px;
-  border: 1px solid #ccc;
+  border: 2px solid #3D9970;
   border-radius: 5px;
+  background-color: white;
 }
 
 /* Driver Cards */
@@ -115,17 +119,21 @@ body {
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  border: 2px solid #3D9970;
+  color: #333;
 }
 
 .profile {
-  width: 120px;  /* Adjust size as needed */
-  height: 120px; /* Ensure it remains a perfect circle */
-  border-radius: 50%; /* Makes it circular */
-  object-fit: cover; /* Ensures the image fills the circle properly */
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
   display: block;
-  margin: 10px auto; /* Centers the image */
+  margin: 10px auto;
 }
 
+/* Status colors */
 .red {
   background-color: #ffcccc;
 }
@@ -145,13 +153,17 @@ body {
 .card-buttons button {
   margin: 5px;
   padding: 5px 10px;
-  border: none;
+  border: 2px solid #3D9970;
   border-radius: 5px;
   cursor: pointer;
+  background-color: white;
+  color: black;
+  font-weight: bold;
 }
 
 .card-buttons button:hover {
-  background-color: #ddd;
+  background-color: #3D9970;
+  color: white;
 }
 
 /* Login Container */
@@ -163,7 +175,11 @@ body {
   justify-content: center;
   width: 100%;
   max-width: 400px;
-  padding: 20px;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid #3D9970;
+  color: white;
 }
 
 /* Logo */
@@ -171,10 +187,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.main-icon {
-
+  margin-bottom: 20px;
 }
 
 /* Input Fields */
@@ -184,18 +197,40 @@ body {
   padding: 12px;
   margin: 12px 0;
   border-radius: 25px;
-  border: none;
+  border: 2px solid #3D9970;
   text-align: center;
   font-size: 16px;
+  background-color: white;
+  color: #333;
 }
 
-/* Forgot Password */
-.forgot-password {
+.login-input::placeholder {
+  color: #999;
+}
+
+/* Unified Link Styles */
+.forgot-password,
+.signup-text a {
   font-size: 14px;
   color: white;
   text-decoration: underline;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: normal;
+}
+
+.forgot-password {
   margin-bottom: 12px;
+}
+
+.signup-text {
+  margin-top: 12px;
+}
+
+.forgot-password:hover,
+.signup-text a:hover {
+  font-weight: bold;
+  text-decoration: none;
 }
 
 /* Sign In Button */
@@ -205,27 +240,164 @@ body {
   padding: 14px;
   background-color: white;
   color: black;
-  border: none;
+  border: 2px solid white;
   border-radius: 25px;
   font-size: 18px;
   cursor: pointer;
   font-weight: bold;
+  margin-top: 10px;
 }
 
 .login-button:hover {
-  background-color: #d9d9d9;
+  background-color: #3D9970;
+  color: white;
+  border-color: white;
 }
 
-/* Signup Text */
-.signup-text {
-  font-size: 14px;
-  color: white;
-  margin-top: 12px;
+/* Main Content Spacing */
+.main-content {
+  margin-top: 80px;
+  width: 100%;
 }
 
-.signup-text a {
+/* Contact Us Page Specific Styles */
+.contact-us-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  color: #333;
+}
+
+.contact-content {
+  margin-top: 80px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 160px);
+}
+
+.contact-content h1 {
+  font-size: 2rem;
+  color: #3D9970;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.contact-layout {
+  display: flex;
+  gap: 40px;
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.contact-form-section {
+  flex: 0 0 50%;
+}
+
+.contact-form {
+  max-width: 500px;
+}
+
+.contact-form h2 {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 2px solid #3D9970;
+  border-radius: 5px;
+  font-family: "Poppins", Arial, sans-serif;
+}
+
+.contact-form textarea {
+  height: 120px;
+  resize: vertical;
+}
+
+.send-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #3D9970;
   color: white;
+  border: 2px solid #3D9970;
+  border-radius: 5px;
   font-weight: bold;
-  text-decoration: underline;
   cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1rem;
+}
+
+.send-button:hover {
+  background-color: #2e8560;
+  border-color: #2e8560;
+}
+
+.map-section {
+  flex: 0 0 50%;
+  display: flex;
+  align-items: flex-start;
+  height: 100%;
+}
+
+.map-section img {
+  width: 100%;
+  height: 100%;
+  min-height: 380px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.contact-info-bar {
+  width: 100%;
+  background-color: #3D9970;
+  padding: 15px 0;
+  margin-top: auto;
+}
+
+.contact-info-content {
+  display: flex;
+  justify-content: space-around;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: white;
+}
+
+.contact-info-content span {
+  margin: 0 10px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .contact-layout {
+      flex-direction: column;
+  }
+  
+  .contact-form-section,
+  .map-section {
+      flex: 1 1 100%;
+  }
+  
+  .map-section img {
+      min-height: 300px;
+  }
+  
+  .contact-info-content {
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+  }
+  
+  .contact-info-content span {
+      white-space: normal;
+  }
 }
