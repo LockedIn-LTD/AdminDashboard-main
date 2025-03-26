@@ -38,7 +38,6 @@ const ContactUs = () => {
                     </div>
                     
                     <div className="map-section">
-                        {/* Replace with your actual map image */}
                         <img src="/images/map.png" alt="Location Map" />
                     </div>
                 </div>
