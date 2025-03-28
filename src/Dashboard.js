@@ -1,22 +1,64 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./index.css";
 import Navbar from "./Navbar";
 
 const Dashboard = () => {
-  // Initialize drivers as state
+  const navigate = useNavigate();
   const [drivers, setDrivers] = useState([
-    { name: "David Brown", status: "Severe", driving: "Yes", color: "red", createdAt: new Date() },
-    { name: "Joe Smith", status: "LockedIn", driving: "Yes", color: "green", createdAt: new Date() },
-    { name: "Joe Rogan", status: "Unstable", driving: "Yes", color: "yellow", createdAt: new Date() },
-    { name: "John Adams", status: "Idle", driving: "No", color: "gray", createdAt: new Date() },
-    { name: "Alice Johnson", status: "LockedIn", driving: "Yes", color: "green", createdAt: new Date() },
-    { name: "Bob Williams", status: "Idle", driving: "No", color: "gray", createdAt: new Date() },
+    { 
+      name: "David Brown", 
+      status: "Severe", 
+      driving: "Yes", 
+      color: "red", 
+      createdAt: new Date(),
+      profilePic: "/images/profile.png"
+    },
+    { 
+      name: "Joe Smith", 
+      status: "LockedIn", 
+      driving: "Yes", 
+      color: "green", 
+      createdAt: new Date(),
+      profilePic: "/images/profile.png"
+    },
+    { 
+      name: "Joe Rogan", 
+      status: "Unstable", 
+      driving: "Yes", 
+      color: "yellow", 
+      createdAt: new Date(),
+      profilePic: "/images/profile.png"
+    },
+    { 
+      name: "John Adams", 
+      status: "Idle", 
+      driving: "No", 
+      color: "gray", 
+      createdAt: new Date(),
+      profilePic: "/images/profile.png"
+    },
+    { 
+      name: "Alice Johnson", 
+      status: "LockedIn", 
+      driving: "Yes", 
+      color: "green", 
+      createdAt: new Date(),
+      profilePic: "/images/profile.png"
+    },
+    { 
+      name: "Bob Williams", 
+      status: "Idle", 
+      driving: "No", 
+      color: "gray", 
+      createdAt: new Date(),
+      profilePic: "/images/profile.png"
+    },
   ]);
   
   const [sortOption, setSortOption] = useState("None");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Handler to sort drivers
   const handleSortChange = (e) => {
     const newSortOption = e.target.value;
     setSortOption(newSortOption);
@@ -27,7 +69,6 @@ const Dashboard = () => {
         sortedDrivers.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case "Status":
-        //sort by most severe to least severe
         const statusOrder = { 
           "Severe": 3,
           "Unstable": 2,
@@ -39,13 +80,11 @@ const Dashboard = () => {
         );
         break;
       case "Activity":
-        //sort by driving to idle
           sortedDrivers.sort((a, b) =>
             b.driving.localeCompare(a.driving) || a.name.localeCompare(b.name)
           );
         break;
       case "Newest":
-        //assumes the last in the list are newest, need to add timestamp attribute
           sortedDrivers.sort((a, b) => b.createdAt - a.createdAt);
         break;
       case "Oldest":
@@ -57,16 +96,13 @@ const Dashboard = () => {
       default:
         break;
     }
-
     setDrivers(sortedDrivers);
   };
 
-  // Handler to update search Query
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
 
-  // Handler to add a new driver card
   const handleAddDriver = () => {
     const newDriver = {
       name: `New Driver ${drivers.length + 1}`,
@@ -74,11 +110,11 @@ const Dashboard = () => {
       driving: "No",
       color: "gray",
       createdAt: new Date(),
+      profilePic: "/images/profile.png"
     };
     setDrivers([...drivers, newDriver]);
   };
 
-  // Handler to remove a driver card by index
   const handleRemoveDriver = (index) => {
     setDrivers(drivers.filter((_, i) => i !== index));
   };
@@ -88,7 +124,7 @@ const Dashboard = () => {
   );
 
   return (
-    <div>
+    <div className="main-content">
       <nav className="navbar">
         <div className="logo">
           <img src={`${process.env.PUBLIC_URL}/images/DriveSense_Brand.png`} alt="DriveSense Logo" />
@@ -127,29 +163,36 @@ const Dashboard = () => {
           value={sortOption}
           onChange={handleSortChange}
         >
-        <option selected disabled hidden>Sort by</option> {/**default display */}
-        <option>None</option> {/**none */}
+          <option selected disabled hidden>Sort by</option>
+          <option>None</option>
           <option>Newest</option>
           <option>Oldest</option>
-          <option>Status</option> {/*Sort by severity of condition*/}
-          <option>Activity</option> {/*Sort by driving or not*/}
+          <option>Status</option>
+          <option>Activity</option>
           <option>Name</option>
         </select>
       </div>
 
       <div className="drivers-grid">
         {filteredDrivers.map((driver, index) => (
-          <div key={index} className={`driver-card ${driver.color}`}>
-            {/* Default profile picture for each driver */}
+          <div 
+            key={index} 
+            className={`driver-card ${driver.color}`}
+            onClick={() => navigate(`/event-log/${driver.name}`, {
+              state: {
+                profilePic: driver.profilePic
+              }
+            })}
+          >
             <img
-              src="/images/profile.png"
+              src={driver.profilePic}
               alt="Profile picture"
               className="profile"
             />
             <h3>{driver.name}</h3>
             <p>Status: {driver.status}</p>
             <p>Driving: {driver.driving}</p>
-            <div className="card-buttons">
+            <div className="card-buttons" onClick={(e) => e.stopPropagation()}>
               <button>Edit Driver</button>
               <button onClick={() => handleRemoveDriver(index)}>
                 Remove Driver

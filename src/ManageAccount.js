@@ -1,7 +1,144 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./index.css";
 
 const ManageAccount = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    password: "",
+    profilePicture: null,
+    previewImage: null,
+  });
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        profilePicture: file,
+        previewImage: URL.createObjectURL(file),
+      }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Form submitted:", formData);
+    alert("Changes saved successfully!");
+    navigate("/dashboard"); // Navigation to Dashboard
+  };
+
+  return (
+    <div className="manage-account-container">
+      <h1>Edit Account</h1>
+      
+      <form onSubmit={handleSubmit} className="account-form">
+        <div className="profile-picture-section">
+          <div className="profile-picture-container">
+            {formData.previewImage ? (
+              <img 
+                src={formData.previewImage} 
+                alt="Profile preview" 
+                className="profile-picture"
+              />
+            ) : (
+              <div className="profile-picture-placeholder">
+                {formData.firstName.charAt(0)}{formData.lastName.charAt(0)}
+              </div>
+            )}
+          </div>
+          <input
+            type="file"
+            id="profile-picture"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="profile-picture-input"
+          />
+          <label htmlFor="profile-picture" className="change-photo-btn">
+            Change Photo
+          </label>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="firstName">First Name</label>
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder="Enter your first name"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="lastName">Last Name</label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Enter your last name"
+            />
+          </div>
+        </div>
+
+        <div className="form-group full-width">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+          />
+        </div>
+
+        <div className="form-group full-width">
+          <label htmlFor="phoneNumber">Phone Number</label>
+          <input
+            type="tel"
+            id="phoneNumber"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={handleChange}
+            placeholder="Enter your phone number"
+          />
+        </div>
+
+        <div className="form-group full-width">
+          <label htmlFor="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Enter new password"
+          />
+        </div>
+
+        <button type="submit" className="save-changes-btn">
+          Save Changes
+        </button>
+      </form>
+    </div>
+  );
 };
 
 export default ManageAccount;
