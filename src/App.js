@@ -7,10 +7,9 @@ import ContactUs from "./ContactUs";
 import Navbar from './Navbar';
 import ForgotPassword from "./ForgotPassword";
 import CreateAccount from "./CreateAccount";
+import EventLog from "./EventLog";
 
 function App() {
-  
-
   return (
     <Router>
       <NavbarExclusion />
@@ -21,6 +20,7 @@ function App() {
         <Route path="/manageaccount" element={<ManageAccount />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/createaccount" element={<CreateAccount />} />
+        <Route path="/event-log/:driverName" element={<EventLog />} />
       </Routes>
     </Router>
   );
