@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./index.css";
 import Navbar from "./Navbar";
+import DriverCard from "./Components/DriverCard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -133,72 +134,55 @@ const Dashboard = () => {
           <Navbar />
         </div>
       </nav>
+      <div className="dashboard-container">
+        <h2 className="title">Connected Drivers</h2>
 
-      <h2 className="title">Connected Drivers</h2>
-
-      <div className="controls">
-        <button className="add-driver" onClick={handleAddDriver}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            fill="black"
-            className="icon"
-            viewBox="0 0 16 16"
+        <div className="controls">
+          <button className="add-driver" onClick={handleAddDriver}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="black"
+              className="icon"
+              viewBox="0 0 16 16"
+            >
+              <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zM8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16z" />
+              <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+            </svg>
+            Add Driver
+          </button>
+          <input 
+            type="text" 
+            placeholder="Search by name" 
+            className="search-bar" 
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+          <select 
+            className="sort-dropdown"
+            value={sortOption}
+            onChange={handleSortChange}
           >
-            <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zM8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16z" />
-            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
-          </svg>
-          Add Driver
-        </button>
-        <input 
-          type="text" 
-          placeholder="Search by name" 
-          className="search-bar" 
-          value={searchQuery}
-          onChange={handleSearchChange}
-        />
-        <select 
-          className="sort-dropdown"
-          value={sortOption}
-          onChange={handleSortChange}
-        >
-          <option selected disabled hidden>Sort by</option>
-          <option>None</option>
-          <option>Newest</option>
-          <option>Oldest</option>
-          <option>Status</option>
-          <option>Activity</option>
-          <option>Name</option>
-        </select>
+            <option selected default>Sort by</option>
+            <option>None</option>
+            <option>Newest</option>
+            <option>Oldest</option>
+            <option>Status</option>
+            <option>Activity</option>
+            <option>Name</option>
+          </select>
+        </div>
       </div>
-
       <div className="drivers-grid">
         {filteredDrivers.map((driver, index) => (
-          <div 
-            key={index} 
-            className={`driver-card ${driver.color}`}
-            onClick={() => navigate(`/event-log/${driver.name}`, {
-              state: {
-                profilePic: driver.profilePic
-              }
-            })}
-          >
-            <img
-              src={driver.profilePic}
-              alt="Profile picture"
-              className="profile"
-            />
-            <h3>{driver.name}</h3>
-            <p>Status: {driver.status}</p>
-            <p>Driving: {driver.driving}</p>
-            <div className="card-buttons" onClick={(e) => e.stopPropagation()}>
-              <button>Edit Driver</button>
-              <button onClick={() => handleRemoveDriver(index)}>
-                Remove Driver
-              </button>
-            </div>
-          </div>
+          <DriverCard
+            key={index}
+            driver={driver}
+            index={index}
+            onRemove={handleRemoveDriver}
+            onEdit={()=> console.log('Edit Driver: $driver.name}')}
+          />
         ))}
       </div>
     </div>
