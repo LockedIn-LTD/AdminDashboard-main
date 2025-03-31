@@ -8,6 +8,8 @@ import Navbar from './Navbar';
 import ForgotPassword from "./ForgotPassword";
 import CreateAccount from "./CreateAccount";
 import EventLog from "./EventLog";
+import EditDriver from "./EditDriver"
+import AddDriver from "./AddDriver";
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/createaccount" element={<CreateAccount />} />
         <Route path="/event-log/:driverName" element={<EventLog />} />
+        <Route path="/edit-driver" element={<EditDriver />} />
+        <Route path="/add-driver" element={<AddDriver />} />
       </Routes>
     </Router>
   );
