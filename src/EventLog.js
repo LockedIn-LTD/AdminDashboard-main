@@ -55,7 +55,7 @@ const EventLog = () => {
   const [expandedEvent, setExpandedEvent] = useState(null);
   const [currentStats, setCurrentStats] = useState({
     heartRate: 70,
-    heartRateStatus: "Good",
+    heartRateStatus: "Normal",
     breathingRate: 42,
     breathingRateStatus: "High",
     speed: 30,
@@ -81,6 +81,9 @@ const EventLog = () => {
         speed: parseFloat(Math.max(20,
           Math.min(100,
             prevStats.speed + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 10)).toFixed(0)),
+        heartRateStatus: "Normal",
+        breathingRateStatus: "High",
+        speedStatus: "Mild"
       }));
     };
 
