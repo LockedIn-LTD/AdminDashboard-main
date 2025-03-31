@@ -37,7 +37,7 @@ const ManageAccount = () => {
     e.preventDefault();
     console.log("Form submitted:", formData);
     alert("Changes saved successfully!");
-    navigate("/dashboard"); // Navigation to Dashboard
+    navigate("/dashboard"); 
   };
 
   return (
@@ -80,7 +80,7 @@ const ManageAccount = () => {
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              placeholder="Enter your first name"
+              placeholder="First Name"
             />
           </div>
 
@@ -92,7 +92,7 @@ const ManageAccount = () => {
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              placeholder="Enter your last name"
+              placeholder="Last Name"
             />
           </div>
         </div>
@@ -105,7 +105,7 @@ const ManageAccount = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="Enter your email"
+            placeholder="Email Address"
           />
         </div>
 
@@ -117,7 +117,7 @@ const ManageAccount = () => {
             name="phoneNumber"
             value={formData.phoneNumber}
             onChange={handleChange}
-            placeholder="Enter your phone number"
+            placeholder="Phone Number"
           />
         </div>
 
@@ -129,7 +129,7 @@ const ManageAccount = () => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            placeholder="Enter new password"
+            placeholder="Password"
           />
         </div>
 
