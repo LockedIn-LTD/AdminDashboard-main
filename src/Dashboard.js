@@ -1,102 +1,117 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./index.css";
 import Navbar from "./Navbar";
 
+const initialDrivers = [
+  { 
+    name: "David Brown", 
+    status: "Severe", 
+    driving: "Yes", 
+    color: "red", 
+    createdAt: new Date(),
+    profilePic: "/images/profile.png",
+    phoneNumber: "",
+    productId: "",
+    emergencyFirstName: "",
+    emergencyLastName: "",
+    emergencyPhoneNumber: ""
+  },
+  { 
+    name: "Joe Smith", 
+    status: "LockedIn", 
+    driving: "Yes", 
+    color: "green", 
+    createdAt: new Date(),
+    profilePic: "/images/profile.png",
+    phoneNumber: "",
+    productId: "",
+    emergencyFirstName: "",
+    emergencyLastName: "",
+    emergencyPhoneNumber: ""
+  },
+  { 
+    name: "Joe Rogan", 
+    status: "Unstable", 
+    driving: "Yes", 
+    color: "yellow", 
+    createdAt: new Date(),
+    profilePic: "/images/profile.png",
+    phoneNumber: "",
+    productId: "",
+    emergencyFirstName: "",
+    emergencyLastName: "",
+    emergencyPhoneNumber: ""
+  },
+  { 
+    name: "John Adams", 
+    status: "Idle", 
+    driving: "No", 
+    color: "gray", 
+    createdAt: new Date(),
+    profilePic: "/images/profile.png",
+    phoneNumber: "",
+    productId: "",
+    emergencyFirstName: "",
+    emergencyLastName: "",
+    emergencyPhoneNumber: ""
+  },
+  { 
+    name: "Alice Wills", 
+    status: "Unstable", 
+    driving: "No", 
+    color: "yellow", 
+    createdAt: new Date(),
+    profilePic: "/images/profile.png",
+    phoneNumber: "",
+    productId: "",
+    emergencyFirstName: "",
+    emergencyLastName: "",
+    emergencyPhoneNumber: ""
+  }
+];
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [drivers, setDrivers] = useState([
-    { 
-      name: "David Brown", 
-      status: "Severe", 
-      driving: "Yes", 
-      color: "red", 
-      createdAt: new Date(),
-      profilePic: "/images/profile.png"
-    },
-    { 
-      name: "Joe Smith", 
-      status: "LockedIn", 
-      driving: "Yes", 
-      color: "green", 
-      createdAt: new Date(),
-      profilePic: "/images/profile.png"
-    },
-    { 
-      name: "Joe Rogan", 
-      status: "Unstable", 
-      driving: "Yes", 
-      color: "yellow", 
-      createdAt: new Date(),
-      profilePic: "/images/profile.png"
-    },
-    { 
-      name: "John Adams", 
-      status: "Idle", 
-      driving: "No", 
-      color: "gray", 
-      createdAt: new Date(),
-      profilePic: "/images/profile.png"
-    },
-    { 
-      name: "Alice Johnson", 
-      status: "LockedIn", 
-      driving: "Yes", 
-      color: "green", 
-      createdAt: new Date(),
-      profilePic: "/images/profile.png"
-    },
-    { 
-      name: "Bob Williams", 
-      status: "Idle", 
-      driving: "No", 
-      color: "gray", 
-      createdAt: new Date(),
-      profilePic: "/images/profile.png"
-    },
-  ]);
+  const location = useLocation();
   
+  const [drivers, setDrivers] = useState(() => {
+    const savedDrivers = localStorage.getItem('drivers');
+    return savedDrivers ? JSON.parse(savedDrivers) : initialDrivers;
+  });
+
   const [sortOption, setSortOption] = useState("None");
   const [searchQuery, setSearchQuery] = useState("");
-  
-  const handleSortChange = (e) => {
-    const newSortOption = e.target.value;
-    setSortOption(newSortOption);
 
-    let sortedDrivers = [...drivers];
-    switch(newSortOption){
-      case "Name":
-        sortedDrivers.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "Status":
-        const statusOrder = { 
-          "Severe": 3,
-          "Unstable": 2,
-          "LockedIn": 1,
-          "Idle": 0
-        };
-        sortedDrivers.sort((a, b) =>
-          statusOrder[b.status] - statusOrder[a.status] || a.name.localeCompare(b.name)
+  useEffect(() => {
+    localStorage.setItem('drivers', JSON.stringify(drivers));
+  }, [drivers]);
+
+  useEffect(() => {
+    if (location.state?.updatedDriver) {
+      setDrivers(prevDrivers => {
+        return prevDrivers.map(driver => 
+          driver.name === location.state.originalName ||
+          driver.name === location.state.updatedDriver.name
+            ? { ...driver, ...location.state.updatedDriver }
+            : driver
         );
-        break;
-      case "Activity":
-          sortedDrivers.sort((a, b) =>
-            b.driving.localeCompare(a.driving) || a.name.localeCompare(b.name)
-          );
-        break;
-      case "Newest":
-          sortedDrivers.sort((a, b) => b.createdAt - a.createdAt);
-        break;
-      case "Oldest":
-          sortedDrivers.sort((a, b) => a.createdAt - b.createdAt);
-        break;
-      case "None":
-          sortedDrivers = [...drivers];
-        break;
-      default:
-        break;
+      });
     }
-    setDrivers(sortedDrivers);
+    
+    if (location.state?.newDriver) {
+      setDrivers(prevDrivers => {
+        const newDriver = location.state.newDriver;
+        const exists = prevDrivers.some(driver => 
+          driver.name.toLowerCase() === newDriver.name.toLowerCase()
+        );
+        return exists ? prevDrivers : [...prevDrivers, newDriver];
+      });
+    }
+  }, [location.state]);
+
+  const handleSortChange = (e) => {
+    setSortOption(e.target.value);
   };
 
   const handleSearchChange = (e) => {
@@ -104,24 +119,55 @@ const Dashboard = () => {
   };
 
   const handleAddDriver = () => {
-    const newDriver = {
-      name: `New Driver ${drivers.length + 1}`,
-      status: "Idle",
-      driving: "No",
-      color: "gray",
-      createdAt: new Date(),
-      profilePic: "/images/profile.png"
-    };
-    setDrivers([...drivers, newDriver]);
+    navigate('/add-driver');
   };
 
   const handleRemoveDriver = (index) => {
-    setDrivers(drivers.filter((_, i) => i !== index));
+    const driverName = filteredDrivers[index].name;
+    setDrivers(drivers.filter(driver => driver.name !== driverName));
   };
 
-  const filteredDrivers = drivers.filter(driver =>
-    driver.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleEditDriver = (driver) => {
+    navigate('/edit-driver', { 
+      state: { 
+        driver: {
+          ...driver,
+          phoneNumber: driver.phoneNumber || "",
+          productId: driver.productId || "",
+          emergencyFirstName: driver.emergencyFirstName || "",
+          emergencyLastName: driver.emergencyLastName || "",
+          emergencyPhoneNumber: driver.emergencyPhoneNumber || ""
+        }
+      } 
+    });
+  };
+
+  // First filter, then sort the filtered results
+  const filteredDrivers = drivers
+    .filter(driver => driver.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      switch(sortOption) {
+        case "Name":
+          return a.name.localeCompare(b.name);
+        case "Status":
+          const statusOrder = { 
+            "Severe": 3,
+            "Unstable": 2,
+            "LockedIn": 1,
+            "Idle": 0
+          };
+          return statusOrder[b.status] - statusOrder[a.status] || a.name.localeCompare(b.name);
+        case "Activity":
+          return b.driving.localeCompare(a.driving) || a.name.localeCompare(b.name);
+        case "Newest":
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case "Oldest":
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        case "None":
+        default:
+          return 0;
+      }
+    });
 
   return (
     <div className="main-content">
@@ -163,20 +209,20 @@ const Dashboard = () => {
           value={sortOption}
           onChange={handleSortChange}
         >
-          <option selected disabled hidden>Sort by</option>
-          <option>None</option>
-          <option>Newest</option>
-          <option>Oldest</option>
-          <option>Status</option>
-          <option>Activity</option>
-          <option>Name</option>
+          <option value="None" disabled hidden>Sort by</option>
+          <option value="None">None</option>
+          <option value="Newest">Newest</option>
+          <option value="Oldest">Oldest</option>
+          <option value="Status">Status</option>
+          <option value="Activity">Activity</option>
+          <option value="Name">Name</option>
         </select>
       </div>
 
       <div className="drivers-grid">
         {filteredDrivers.map((driver, index) => (
           <div 
-            key={index} 
+            key={`${driver.name}-${index}`} 
             className={`driver-card ${driver.color}`}
             onClick={() => navigate(`/event-log/${driver.name}`, {
               state: {
@@ -188,12 +234,18 @@ const Dashboard = () => {
               src={driver.profilePic}
               alt="Profile picture"
               className="profile"
+              onError={(e) => {
+                e.target.onerror = null; 
+                e.target.src = "/images/profile.png";
+              }}
             />
             <h3>{driver.name}</h3>
             <p>Status: {driver.status}</p>
             <p>Driving: {driver.driving}</p>
             <div className="card-buttons" onClick={(e) => e.stopPropagation()}>
-              <button>Edit Driver</button>
+              <button onClick={() => handleEditDriver(driver)}>
+                Edit Driver
+              </button>
               <button onClick={() => handleRemoveDriver(index)}>
                 Remove Driver
               </button>
