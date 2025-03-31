@@ -88,7 +88,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 100px; /* Increased gap between controls */
+  gap: 100px; 
   padding: 10px 20px;
   margin: 0 auto 20px;
   width: 90%;
@@ -100,14 +100,14 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px; /* Increased horizontal padding */
+  padding: 10px 20px; 
   background-color: white;
   color: black;
   border: 2px solid #3D9970;
   cursor: pointer;
   border-radius: 32px;
   font-weight: bold;
-  font-size: 16px; /* Explicit font size */
+  font-size: 16px; 
 }
 
 .add-driver:hover {
@@ -120,11 +120,11 @@ body {
 
 .search-bar {
   font-family: "Poppins", Arial, sans-serif;
-  padding: 15px 15px; /* Increased padding */
+  padding: 15px 15px;
   width: 250px;
   border: 2px solid #3D9970;
   border-radius: 32px;
-  font-size: 16px; /* Match add-driver text size */
+  font-size: 16px;
 }
 
 .sort-dropdown {
@@ -585,11 +585,11 @@ body {
 .contact-form input {
   font-family: "Poppins", Arial, sans-serif;
   width: 100%;
-  padding: 8px 12px; /* Reduced vertical padding */
+  padding: 8px 12px;
   margin-bottom: 20px;
   border: 2px solid #3D9970;
   border-radius: 5px;
-  height: 40px !important; /* Reduced fixed height */
+  height: 40px !important;
   box-sizing: border-box;
 }
 
@@ -617,6 +617,7 @@ body {
   cursor: pointer;
   transition: all 0.3s;
   font-size: 1rem;
+  margin-bottom: 40px;
 }
 
 .send-button:hover {
@@ -652,7 +653,7 @@ body {
   background-color: #3D9970;
   padding: 15px 0;
   margin-top: auto;
-  margin-bottom: -20px; /* Removes the container's padding effect */
+  margin-bottom: -20px; 
 }
 
 .contact-info-content {
@@ -757,6 +758,7 @@ body {
 .manage-account-container h1 {
   font-family: "Poppins", Arial, sans-serif;
   text-align: center;
+  margin-top: 60px;
   margin-bottom: 40px;
   color: #3D9970;
   font-size: 32px;
