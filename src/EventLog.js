@@ -53,12 +53,12 @@ const EventLog = () => {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [expandedEvent, setExpandedEvent] = useState(null);
-  const [currentStats] = useState({
-    heartRate: "70 BPM",
+  const [currentStats, setCurrentStats] = useState({
+    heartRate: 70,
     heartRateStatus: "Good",
-    breathingRate: "42 BrPM",
+    breathingRate: 42,
     breathingRateStatus: "High",
-    speed: "30 Km/h",
+    speed: 30,
     speedStatus: "Mild"
   });
 
@@ -69,8 +69,48 @@ const EventLog = () => {
     setEvents(driverEvents);
   }, [driverName]);
 
+  useEffect(() => {
+    const updateStats = () => {
+      setCurrentStats((prevStats) => ({
+        heartRate: parseFloat(Math.max(60, //max ensures number does not drop below 60
+          Math.min(120, //min ensures number does not exceed 120
+            prevStats.heartRate + (Math.random() > 0.5 ? 1 : -1) * Math.random()*5)).toFixed(0)),
+        breathingRate: parseFloat(Math.max(30,
+          Math.min(60,
+            prevStats.breathingRate + (Math.random() > 0.5 ? 1 : -1)*Math.random() * 3)).toFixed(0)),
+        speed: parseFloat(Math.max(20,
+          Math.min(100,
+            prevStats.speed + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 10)).toFixed(0)),
+      }));
+    };
+
+    const interval = setInterval(updateStats, 1000); //update every 1s
+
+    return () => clearInterval(interval);//clear when component unmounts
+  }, []);
+
   const toggleEvent = (eventId) => {
     setExpandedEvent(expandedEvent === eventId ? null : eventId);
+  };
+
+  const addEvent = () => {
+    //create new event object
+    const newEvent = {
+      id: events.length + 1, //generate unique ID
+      date: new Date().toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",  
+      }),
+      severity: "Mild",
+      heartRate: "80 BPM",
+      breathingRate: "50 BrPM",
+      vehicleSpeed: "60 Km/h",
+      wheelHoldTime: "1 minute",
+      hasClip: true,
+    };
+    //adds new event to end of list of events
+    setEvents([...events, newEvent]);
   };
 
   return (
@@ -94,7 +134,7 @@ const EventLog = () => {
             <div className="metrics-container">
               <div className="metric-card">
                 <h3>Heart Rate</h3>
-                <p className="metric-value">{currentStats.heartRate}</p>
+                <p className="metric-value">{currentStats.heartRate} BPM</p>
                 <div className="status-badge good">
                   {currentStats.heartRateStatus}
                 </div>
@@ -102,7 +142,7 @@ const EventLog = () => {
 
               <div className="metric-card">
                 <h3>Breathing Rate</h3>
-                <p className="metric-value">{currentStats.breathingRate}</p>
+                <p className="metric-value">{currentStats.breathingRate} BrPM</p>
                 <div className="status-badge high">
                   {currentStats.breathingRateStatus}
                 </div>
@@ -110,7 +150,7 @@ const EventLog = () => {
 
               <div className="metric-card">
                 <h3>Vehicle Speed</h3>
-                <p className="metric-value">{currentStats.speed}</p>
+                <p className="metric-value">{currentStats.speed} km/h</p>
                 <div className="status-badge mild">
                   {currentStats.speedStatus}
                 </div>
@@ -120,6 +160,9 @@ const EventLog = () => {
 
           <div className="events-section">
             <h2>Events</h2>
+            <button className="add-event-test-button" onClick={addEvent}>
+              Add Event
+            </button>
             {events.length > 0 ? (
               events.map(event => (
                 <div key={event.id} className="event-accordion">
