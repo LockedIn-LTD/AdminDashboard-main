@@ -8,7 +8,7 @@ import Navbar from './Navbar';
 import ForgotPassword from "./ForgotPassword";
 import CreateAccount from "./CreateAccount";
 import EventLog from "./EventLog";
-import EditDriver from "./EditDriver"
+import EditDriver from "./EditDriver";
 import AddDriver from "./AddDriver";
 
 function App() {
@@ -30,9 +30,11 @@ function App() {
   );
 }
 
-function NavbarExclusion(){
+function NavbarExclusion() {
   const location = useLocation();
-  const showNavbar = location.pathname !== "/";
+  const hideNavbarPaths = ["/", "/forgotpassword", "/createaccount"];
+  const showNavbar = !hideNavbarPaths.includes(location.pathname);
+
   return (
     <>
       {showNavbar && <Navbar />}
