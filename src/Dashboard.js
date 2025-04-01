@@ -142,7 +142,6 @@ const Dashboard = () => {
     });
   };
 
-  // First filter, then sort the filtered results
   const filteredDrivers = drivers
     .filter(driver => driver.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
@@ -197,13 +196,18 @@ const Dashboard = () => {
           </svg>
           Add Driver
         </button>
-        <input 
-          type="text" 
-          placeholder="Search by name" 
-          className="search-bar" 
-          value={searchQuery}
-          onChange={handleSearchChange}
-        />
+        
+        <div className="search-container">
+          <i className="fas fa-search search-icon"></i>
+          <input 
+            type="text" 
+            placeholder="Search by name" 
+            className="search-bar" 
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+        </div>
+        
         <select 
           className="sort-dropdown"
           value={sortOption}
