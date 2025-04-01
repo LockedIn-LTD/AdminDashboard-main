@@ -12,6 +12,7 @@ const mockEventsData = {
       breathingRate: "54 BPM",
       vehicleSpeed: "140 Km/h",
       wheelHoldTime: "1 minute 30secs",
+      videoUrl: "/videos/testvideo.mp4",
       hasClip: true
     },
     {
@@ -70,23 +71,64 @@ const EventLog = () => {
   }, [driverName]);
 
   useEffect(() => {
-    const updateStats = () => {
-      setCurrentStats((prevStats) => ({
-        heartRate: parseFloat(Math.max(60, //max ensures number does not drop below 60
-          Math.min(120, //min ensures number does not exceed 120
-            prevStats.heartRate + (Math.random() > 0.5 ? 1 : -1) * Math.random()*5)).toFixed(0)),
-        breathingRate: parseFloat(Math.max(30,
-          Math.min(60,
-            prevStats.breathingRate + (Math.random() > 0.5 ? 1 : -1)*Math.random() * 3)).toFixed(0)),
-        speed: parseFloat(Math.max(20,
-          Math.min(100,
-            prevStats.speed + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 10)).toFixed(0)),
-      }));
+    const getStatus = (value, type) => {
+      switch (type) {
+        case 'heartRate':
+          if (value < 80) return "Good";
+          if (value < 100) return "Mild";
+          return "High";
+        case 'breathingRate':
+          if (value < 40) return "Good";
+          if (value < 50) return "Mild";
+          return "High";
+        case 'speed':
+          if (value < 60) return "Good";
+          if (value < 80) return "Mild";
+          return "High";
+        default:
+          return "Good";
+      }
     };
 
-    const interval = setInterval(updateStats, 1000); //update every 1s
+    const updateStats = () => {
+      setCurrentStats((prevStats) => {
+        const newHeartRate = parseFloat(Math.max(
+          60,
+          Math.min(
+            120,
+            prevStats.heartRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 5
+          )
+        ).toFixed(0));
+        
+        const newBreathingRate = parseFloat(Math.max(
+          30,
+          Math.min(
+            60,
+            prevStats.breathingRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 3
+          )
+        ).toFixed(0));
+        
+        const newSpeed = parseFloat(Math.max(
+          20,
+          Math.min(
+            100,
+            prevStats.speed + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 10
+          )
+        ).toFixed(0));
 
-    return () => clearInterval(interval);//clear when component unmounts
+        return {
+          heartRate: newHeartRate,
+          heartRateStatus: getStatus(newHeartRate, 'heartRate'),
+          breathingRate: newBreathingRate,
+          breathingRateStatus: getStatus(newBreathingRate, 'breathingRate'),
+          speed: newSpeed,
+          speedStatus: getStatus(newSpeed, 'speed')
+        };
+      });
+    };
+
+    const interval = setInterval(updateStats, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const toggleEvent = (eventId) => {
@@ -94,9 +136,8 @@ const EventLog = () => {
   };
 
   const addEvent = () => {
-    //create new event object
     const newEvent = {
-      id: events.length + 1, //generate unique ID
+      id: events.length + 1,
       date: new Date().toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
@@ -109,7 +150,6 @@ const EventLog = () => {
       wheelHoldTime: "1 minute",
       hasClip: true,
     };
-    //adds new event to end of list of events
     setEvents([...events, newEvent]);
   };
 
@@ -135,7 +175,7 @@ const EventLog = () => {
               <div className="metric-card">
                 <h3>Heart Rate</h3>
                 <p className="metric-value">{currentStats.heartRate} BPM</p>
-                <div className="status-badge good">
+                <div className={`status-badge ${currentStats.heartRateStatus.toLowerCase()}`}>
                   {currentStats.heartRateStatus}
                 </div>
               </div>
@@ -143,7 +183,7 @@ const EventLog = () => {
               <div className="metric-card">
                 <h3>Breathing Rate</h3>
                 <p className="metric-value">{currentStats.breathingRate} BrPM</p>
-                <div className="status-badge high">
+                <div className={`status-badge ${currentStats.breathingRateStatus.toLowerCase()}`}>
                   {currentStats.breathingRateStatus}
                 </div>
               </div>
@@ -151,7 +191,7 @@ const EventLog = () => {
               <div className="metric-card">
                 <h3>Vehicle Speed</h3>
                 <p className="metric-value">{currentStats.speed} km/h</p>
-                <div className="status-badge mild">
+                <div className={`status-badge ${currentStats.speedStatus.toLowerCase()}`}>
                   {currentStats.speedStatus}
                 </div>
               </div>
@@ -199,8 +239,11 @@ const EventLog = () => {
                         <span>{event.wheelHoldTime}</span>
                       </div>
                       {event.hasClip && (
-                        <div className="video-placeholder">
-                          <p>Video clip will appear here</p>
+                        <div className="video-container">
+                          <video controls width="100%">
+                            <source src={event.videoUrl} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
                         </div>
                       )}
                     </div>
