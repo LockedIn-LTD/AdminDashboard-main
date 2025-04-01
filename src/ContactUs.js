@@ -36,7 +36,6 @@ const ContactUs = () => {
             (response) => {
                 console.log("Email sent successfully", response);
                 alert("Message sent successfully!");
-                //reset the form after submission
                 setFormData({firstName: "", lastName: "", email: "", message: "" });
             },
             (error) => {
@@ -47,7 +46,6 @@ const ContactUs = () => {
     };
 
     return (      
-
         <div className="contact-us-container">
             <Navbar />
             <div className="contact-content">
@@ -63,7 +61,7 @@ const ContactUs = () => {
                                     name="firstName"
                                     value={formData.firstName}
                                     onChange={handleInputChange}
-                                    placeholder="Enter first name"
+                                    placeholder="First Name"
                                     required
                                 />
                             </div>
@@ -75,7 +73,7 @@ const ContactUs = () => {
                                     name="lastName"
                                     value={formData.lastName}
                                     onChange={handleInputChange}
-                                    placeholder="Enter last name"
+                                    placeholder="Last Name"
                                     required
                                 />
                             </div>
@@ -87,7 +85,7 @@ const ContactUs = () => {
                                     name="email"
                                     value={formData.email}
                                     onChange={handleInputChange}
-                                    placeholder="Enter email"   
+                                    placeholder="Email Address"   
                                     required 
                                 />
                             </div>
@@ -98,12 +96,12 @@ const ContactUs = () => {
                                     name="message"
                                     value={formData.message}
                                     onChange={handleInputChange}
-                                    placeholder="Enter your message"
+                                    placeholder="Enter Message"
                                     required>
                                 </textarea>
                             </div>
                             
-                            <button className="send-button">Submit</button>
+                            <button className="send-button">Send Message</button>
                         </form>
                     </div>
                     
@@ -114,10 +112,10 @@ const ContactUs = () => {
                 
                 <div className="contact-info-bar">
                     <div className="contact-info-content">
-                        <span>+1 (123) 456 7890</span>
-                        <span>123 Apple St, Ottawa, ON, K1N 5N2</span>
-                        <span>contactdrivesense@gmail.com</span>
-                        <span>9:00 am - 5.00 pm</span>
+                        <span><i className="fas fa-phone"></i> +1 (123) 456 7890</span>
+                        <span><i className="fas fa-location-dot"></i> 123 Apple St, Ottawa, ON, K1N 5N2</span>
+                        <span><i className="fas fa-envelope"></i> contactdrivesense@gmail.com</span>
+                        <span><i className="fas fa-clock"></i> 9:00 am - 5.00 pm</span>
                     </div>
                 </div>
             </div>
