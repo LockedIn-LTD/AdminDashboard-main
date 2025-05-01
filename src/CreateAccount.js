@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./index.css";
+import "./StyleSheets/index.css";
 
 const CreateAccount = () => {
   const navigate = useNavigate();

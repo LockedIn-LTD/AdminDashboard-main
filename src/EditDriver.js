@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "./index.css";
+import "./StyleSheets/index.css";
 
 const EditDriver = () => {
   const navigate = useNavigate();

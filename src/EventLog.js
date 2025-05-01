@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import "./index.css";
+import "./StyleSheets/index.css";
 
 const mockEventsData = {
   "Joe Smith": [
