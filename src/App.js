@@ -4,7 +4,7 @@ import Login from "./Login";
 import Dashboard from "./Dashboard";
 import ManageAccount from "./ManageAccount";
 import ContactUs from "./ContactUs";
-import Navbar from './Navbar';
+import Navbar from './Components/Navbar';
 import ForgotPassword from "./ForgotPassword";
 import CreateAccount from "./CreateAccount";
 import EventLog from "./EventLog";

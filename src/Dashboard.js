@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "./index.css";
-import Navbar from "./Navbar";
+import "./StyleSheets/index.css";
+import Navbar from "./Components/Navbar";
+import Popup from "./Components/Popup";
 
 const initialDrivers = [
   { 
@@ -123,9 +124,28 @@ const Dashboard = () => {
   };
 
   const handleRemoveDriver = (index) => {
-    const driverName = filteredDrivers[index].name;
-    setDrivers(drivers.filter(driver => driver.name !== driverName));
+    const driver = filteredDrivers[index];
+    openDeletePopup(driver);
   };
+
+    // Popup state management
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [driverToDelete, setDriverToDelete] = useState(null);
+  
+    const openDeletePopup = (driver) => {
+      setDriverToDelete(driver);
+      setIsPopupOpen(true);
+    };
+    
+    const closeDeletePopup = () => {
+      setDriverToDelete(null);
+      setIsPopupOpen(false);
+    };
+  
+    const confirmDelete = () => {
+      setDrivers(drivers.filter(driver => driver.name !== driverToDelete.name));
+      closeDeletePopup();
+    };  
 
   const handleEditDriver = (driver) => {
     navigate('/edit-driver', { 
@@ -180,6 +200,14 @@ const Dashboard = () => {
       </nav>
 
       <h2 className="title">Connected Drivers</h2>
+      <Popup 
+        isOpen={isPopupOpen}
+        onClose={closeDeletePopup}
+        onConfirm={confirmDelete}
+        message={
+          <>Are you sure you want to delete <br />
+          {driverToDelete?.name}?</>}
+        />
 
       <div className="controls">
         <button className="add-driver" onClick={handleAddDriver}>
