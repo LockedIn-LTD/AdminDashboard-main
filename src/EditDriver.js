@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./index.css";
 
@@ -8,26 +8,49 @@ const EditDriver = () => {
   const driverData = location.state?.driver || {};
   
   const [formData, setFormData] = useState({
-    firstName: driverData.name ? driverData.name.split(' ')[0] : '',
-    lastName: driverData.name ? driverData.name.split(' ').slice(1).join(' ') : '',
+    firstName: driverData.name ? driverData.name.split(" ")[0] : "",
+    lastName: driverData.name ? driverData.name.split(" ").slice(1).join(" ") : "",
     phoneNumber: driverData.phoneNumber || "",
     productId: driverData.productId || "",
-    emergencyFirstName: driverData.emergencyFirstName || "",
-    emergencyLastName: driverData.emergencyLastName || "",
-    emergencyPhoneNumber: driverData.emergencyPhoneNumber || "",
     profilePicture: null,
     previewImage: driverData.profilePic || null,
   });
 
+  const [emergencyContacts, setEmergencyContacts] = useState(
+    driverData.emergencyContacts?.length > 0
+      ? driverData.emergencyContacts
+      : [{ firstName: "", lastName: "", phoneNumber: "" }]
+  );
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEmergencyChange = (index, e) => {
+    const { name, value } = e.target;
+    setEmergencyContacts((prevContacts) => {
+      const updated = [...prevContacts];
+      updated[index][name] = value;
+      return updated;
+    });
+  };
+
+  const handleAddEmergencyContact = () => {
+    setEmergencyContacts((prev) => [
+      ...prev,
+      { firstName: "", lastName: "", phoneNumber: "" },
+    ]);
+  };
+
+  const handleRemoveEmergencyContact = (index) => {
+    setEmergencyContacts((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         profilePicture: file,
         previewImage: URL.createObjectURL(file),
@@ -43,35 +66,34 @@ const EditDriver = () => {
       profilePic: formData.previewImage || driverData.profilePic,
       phoneNumber: formData.phoneNumber,
       productId: formData.productId,
-      emergencyFirstName: formData.emergencyFirstName,
-      emergencyLastName: formData.emergencyLastName,
-      emergencyPhoneNumber: formData.emergencyPhoneNumber
+      emergencyContacts,
     };
 
-    navigate("/dashboard", { 
-      state: { 
+    navigate("/dashboard", {
+      state: {
         updatedDriver,
-        originalName: driverData.name
-      } 
+        originalName: driverData.name,
+      },
     });
   };
 
   return (
     <div className="manage-account-container">
       <h1 className="edit-driver-title">Edit Driver</h1>
-      
+
       <form onSubmit={handleSubmit} className="account-form">
         <div className="profile-picture-section">
           <div className="profile-picture-container">
             {formData.previewImage ? (
-              <img 
-                src={formData.previewImage} 
-                alt="Driver preview" 
+              <img
+                src={formData.previewImage}
+                alt="Driver preview"
                 className="profile-picture"
               />
             ) : (
               <div className="profile-picture-placeholder">
-                {formData.firstName.charAt(0)}{formData.lastName.charAt(0)}
+                {formData.firstName.charAt(0)}
+                {formData.lastName.charAt(0)}
               </div>
             )}
           </div>
@@ -139,44 +161,79 @@ const EditDriver = () => {
             />
           </div>
 
-          <h3 className="emergency-contact-title">Emergency Contact</h3>
-          
-          <div className="form-row">
-            <div className="form-group name-group">
-              <label htmlFor="emergencyFirstName">First Name</label>
-              <input
-                type="text"
-                id="emergencyFirstName"
-                name="emergencyFirstName"
-                value={formData.emergencyFirstName}
-                onChange={handleChange}
-                placeholder="First Name"
-              />
-            </div>
-            <div className="form-group name-group">
-              <label htmlFor="emergencyLastName">Last Name</label>
-              <input
-                type="text"
-                id="emergencyLastName"
-                name="emergencyLastName"
-                value={formData.emergencyLastName}
-                onChange={handleChange}
-                placeholder="Last Name"
-              />
-            </div>
-          </div>
+          <h3 className="emergency-contact-title">Emergency Contacts</h3>
 
-          <div className="form-group">
-            <label htmlFor="emergencyPhoneNumber">Phone Number</label>
-            <input
-              type="tel"
-              id="emergencyPhoneNumber"
-              name="emergencyPhoneNumber"
-              value={formData.emergencyPhoneNumber}
-              onChange={handleChange}
-              placeholder="Phone Number"
-            />
-          </div>
+          {emergencyContacts.map((contact, index) => (
+            <div key={index} className="emergency-contact-block">
+              <div className="form-row">
+                <div className="form-group name-group">
+                  <label>First Name</label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={contact.firstName}
+                    onChange={(e) => handleEmergencyChange(index, e)}
+                    placeholder="First Name"
+                  />
+                </div>
+                <div className="form-group name-group">
+                  <label>Last Name</label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={contact.lastName}
+                    onChange={(e) => handleEmergencyChange(index, e)}
+                    placeholder="Last Name"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Phone Number</label>
+                <input
+                  type="tel"
+                  name="phoneNumber"
+                  value={contact.phoneNumber}
+                  onChange={(e) => handleEmergencyChange(index, e)}
+                  placeholder="Phone Number"
+                />
+              </div>
+              {emergencyContacts.length > 1 && (
+                <button
+                  type="button"
+                  className="remove-btn"
+                  onClick={() => handleRemoveEmergencyContact(index)}
+                  aria-label="Remove contact"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="trash-icon"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                    <line x1="10" x2="10" y1="11" y2="17"></line>
+                    <line x1="14" x2="14" y1="11" y2="17"></line>
+                  </svg>
+                </button>
+              )}
+            </div>
+          ))}
+
+          <button
+            type="button"
+            className="save-changes-btn edit-driver-save-btn"
+            onClick={handleAddEmergencyContact}
+          >
+            + Add Another
+          </button>
         </div>
 
         <button type="submit" className="save-changes-btn edit-driver-save-btn">

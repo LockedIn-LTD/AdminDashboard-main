@@ -60,15 +60,14 @@ const initialDrivers = [
     name: "Alice Wills", 
     status: "Unstable", 
     driving: "No", 
-    color: "yellow", 
+    color: "gray", 
     createdAt: new Date(),
     profilePic: "/images/profile.png",
     phoneNumber: "",
     productId: "",
     emergencyFirstName: "",
     emergencyLastName: "",
-    emergencyPhoneNumber: ""
-  }
+  }  
 ];
 
 const Dashboard = () => {
@@ -82,6 +81,8 @@ const Dashboard = () => {
 
   const [sortOption, setSortOption] = useState("None");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [removedDriverName, setRemovedDriverName] = useState("");
 
   useEffect(() => {
     localStorage.setItem('drivers', JSON.stringify(drivers));
@@ -110,6 +111,13 @@ const Dashboard = () => {
     }
   }, [location.state]);
 
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {setShowToast(false);}, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
+
   const handleSortChange = (e) => {
     setSortOption(e.target.value);
   };
@@ -125,6 +133,8 @@ const Dashboard = () => {
   const handleRemoveDriver = (index) => {
     const driverName = filteredDrivers[index].name;
     setDrivers(drivers.filter(driver => driver.name !== driverName));
+    setRemovedDriverName(driverName);
+    setShowToast(true);
   };
 
   const handleEditDriver = (driver) => {
@@ -257,6 +267,27 @@ const Dashboard = () => {
           </div>
         ))}
       </div>
+      {showToast && (
+        <div className="toast-notification">
+          <div className="toast-content">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="check-icon"
+            >
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Driver "{removedDriverName}" successfully removed</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
