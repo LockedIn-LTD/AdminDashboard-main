@@ -8,7 +8,7 @@ const mockEventsData = {
       id: 1,
       date: "January 29th, 2025",
       severity: "Mild",
-      heartRate: "99999 BPM",
+      heartRate: "128 BPM",
       breathingRate: "54 BPM",
       vehicleSpeed: "140 Km/h",
       wheelHoldTime: "1 minute 30secs",
