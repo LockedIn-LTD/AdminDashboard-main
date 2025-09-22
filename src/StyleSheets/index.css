@@ -81,7 +81,6 @@ body {
   display: inline-block;
 }
 
-/* Dashboard */
 .title {
   font-family: "Poppins", Arial, sans-serif;
   text-align: center;
@@ -248,6 +247,52 @@ body {
 .card-buttons button:hover {
   background-color: #3D9970;
   color: white;
+}
+
+/* Removal notification styles */
+.toast-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #3D9970;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.check-icon {
+  flex-shrink: 0;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
 
 /* Event Log Specific Styles */
@@ -610,7 +655,7 @@ body {
   border-color: white;
 }
 
-/* Contact Us Page Specific Styles */
+/* Contact Us Page Styles */
 .contact-us-container {
   font-family: "Poppins", Arial, sans-serif;
   width: 100%;
@@ -700,6 +745,7 @@ body {
   cursor: pointer;
   transition: all 0.3s;
   font-size: 1.1rem;
+  margin-bottom: 40px;
 }
 
 .send-button:hover {
@@ -847,6 +893,7 @@ body {
 .manage-account-container h1 {
   font-family: "Poppins", Arial, sans-serif;
   text-align: center;
+  margin-top: 60px;
   margin-bottom: 40px;
   color: #3D9970;
   font-size: 32px;
@@ -997,6 +1044,28 @@ body {
 
 .edit-driver-save-btn {
   margin-top: 15px;
+}
+
+.remove-btn {
+  background: white;
+  border: 2px solid #3D9970;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.remove-btn:hover {
+  background: #f8f8f8;
+}
+
+.trash-icon {
+  color: #000;
+  pointer-events: none;
 }
 
 /* Updated Create Account sign-in styles */
