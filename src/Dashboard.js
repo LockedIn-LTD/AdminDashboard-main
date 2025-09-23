@@ -62,12 +62,14 @@ const initialDrivers = [
     status: "Unstable", 
     driving: "No", 
     color: "gray", 
+    color: "gray", 
     createdAt: new Date(),
     profilePic: "/images/profile.png",
     phoneNumber: "",
     productId: "",
     emergencyFirstName: "",
     emergencyLastName: "",
+  }  
   }  
 ];
 
@@ -82,6 +84,8 @@ const Dashboard = () => {
 
   const [sortOption, setSortOption] = useState("None");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [removedDriverName, setRemovedDriverName] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [removedDriverName, setRemovedDriverName] = useState("");
 
@@ -111,6 +115,13 @@ const Dashboard = () => {
       });
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {setShowToast(false);}, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
 
   useEffect(() => {
     if (showToast) {
@@ -154,6 +165,11 @@ const Dashboard = () => {
       setDrivers(drivers.filter(driver => driver.name !== driverToDelete.name));
       closeDeletePopup();
     };  
+    const driverName = filteredDrivers[index].name;
+    setDrivers(drivers.filter(driver => driver.name !== driverName));
+    setRemovedDriverName(driverName);
+    setShowToast(true);
+  };
 
   const handleEditDriver = (driver) => {
     navigate('/edit-driver', { 
@@ -293,6 +309,27 @@ const Dashboard = () => {
           </div>
         ))}
       </div>
+      {showToast && (
+        <div className="toast-notification">
+          <div className="toast-content">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="check-icon"
+            >
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Driver "{removedDriverName}" successfully removed</span>
+          </div>
+        </div>
+      )}
       {showToast && (
         <div className="toast-notification">
           <div className="toast-content">
