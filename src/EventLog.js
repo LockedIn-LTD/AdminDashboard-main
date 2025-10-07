@@ -8,10 +8,9 @@ const mockEventsData = {
       id: 1,
       date: "January 29th, 2025",
       severity: "Mild",
-      heartRate: "99999 BPM",
+      heartRate: "128 BPM",
       breathingRate: "54 BPM",
       vehicleSpeed: "140 Km/h",
-      wheelHoldTime: "1 minute 30secs",
       videoUrl: "/videos/testvideo.mp4",
       hasClip: true
     },
@@ -22,7 +21,6 @@ const mockEventsData = {
       heartRate: "99 BPM",
       breathingRate: "54 BPM",
       vehicleSpeed: "140 Km/h",
-      wheelHoldTime: "2 minutes",
       hasClip: false
     },
     {
@@ -32,7 +30,6 @@ const mockEventsData = {
       heartRate: "70 BPM",
       breathingRate: "42 BPM",
       vehicleSpeed: "30 Km/h",
-      wheelHoldTime: "1 minute",
       hasClip: false
     },
     {
@@ -42,7 +39,6 @@ const mockEventsData = {
       heartRate: "120 BPM",
       breathingRate: "60 BPM",
       vehicleSpeed: "90 Km/h",
-      wheelHoldTime: "3 minutes",
       hasClip: true
     }
   ]
@@ -63,7 +59,10 @@ const EventLog = () => {
     speedStatus: "Mild"
   });
 
-  const profilePic = location.state?.profilePic || "/images/profile.png";
+  const defaultProfilePic = `${process.env.PUBLIC_URL}/images/profile.png`;
+  const profilePic = (location.state?.profilePic && location.state.profilePic.trim() !== '') 
+    ? location.state.profilePic 
+    : defaultProfilePic;
 
   useEffect(() => {
     const driverEvents = mockEventsData[driverName] || [];
@@ -147,12 +146,14 @@ const EventLog = () => {
       heartRate: "80 BPM",
       breathingRate: "50 BrPM",
       vehicleSpeed: "60 Km/h",
-      wheelHoldTime: "1 minute",
       hasClip: true,
     };
     setEvents([...events, newEvent]);
   };
 
+  const downloadEventReport = (event) => {
+    const reportContent = `
+EVENT REPORT
   return (
     <div className="main-content">
       <div className="event-log-container">
@@ -165,8 +166,12 @@ const EventLog = () => {
             <div className="profile-container">
               <img
                 src={profilePic}
-                alt="Profile picture"
+                alt={`${driverName} profile picture`}
                 className="profile-large"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = defaultProfilePic;
+                }}
               />
               <h1 className="driver-name">{driverName}</h1>
             </div>
@@ -234,10 +239,6 @@ const EventLog = () => {
                         <span>Vehicle Speed:</span>
                         <span>{event.vehicleSpeed}</span>
                       </div>
-                      <div className="detail-row">
-                        <span>Wheel Hold Time:</span>
-                        <span>{event.wheelHoldTime}</span>
-                      </div>
                       {event.hasClip && (
                         <div className="video-container">
                           <video controls width="100%">
@@ -246,6 +247,12 @@ const EventLog = () => {
                           </video>
                         </div>
                       )}
+                      <button 
+                        className="download-report-button" 
+                        onClick={() => downloadEventReport(event)}
+                      >
+                        Download Event Report
+                      </button>
                     </div>
                   )}
                 </div>

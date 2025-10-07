@@ -10,16 +10,39 @@ const AddDriver = () => {
     lastName: "",
     phoneNumber: "",
     productId: "",
-    emergencyFirstName: "",
-    emergencyLastName: "",
-    emergencyPhoneNumber: "",
     profilePicture: null,
-    previewImage: null
+    previewImage: null,
   });
+
+  // Emergency contacts as an array
+  const [emergencyContacts, setEmergencyContacts] = useState([
+    { firstName: "", lastName: "", phoneNumber: "" }
+  ]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle change for emergency contacts
+  const handleEmergencyChange = (index, e) => {
+    const { name, value } = e.target;
+    setEmergencyContacts(prevContacts => {
+      const updated = [...prevContacts];
+      updated[index][name] = value;
+      return updated;
+    });
+  };
+
+  const handleAddEmergencyContact = () => {
+    setEmergencyContacts(prev => [
+      ...prev,
+      { firstName: "", lastName: "", phoneNumber: "" }
+    ]);
+  };
+
+  const handleRemoveEmergencyContact = (index) => {
+    setEmergencyContacts(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleImageChange = (e) => {
@@ -44,9 +67,7 @@ const AddDriver = () => {
       profilePic: formData.previewImage || "/images/profile.png",
       phoneNumber: formData.phoneNumber,
       productId: formData.productId,
-      emergencyFirstName: formData.emergencyFirstName,
-      emergencyLastName: formData.emergencyLastName,
-      emergencyPhoneNumber: formData.emergencyPhoneNumber
+      emergencyContacts
     };
 
     navigate("/dashboard", { 
@@ -140,43 +161,79 @@ const AddDriver = () => {
           </div>
 
           <h3 className="emergency-contact-title">Emergency Contact</h3>
-          
-          <div className="form-row">
-            <div className="form-group name-group">
-              <label htmlFor="emergencyFirstName">First Name</label>
-              <input
-                type="text"
-                id="emergencyFirstName"
-                name="emergencyFirstName"
-                value={formData.emergencyFirstName}
-                onChange={handleChange}
-                placeholder="First Name"
-              />
-            </div>
-            <div className="form-group name-group">
-              <label htmlFor="emergencyLastName">Last Name</label>
-              <input
-                type="text"
-                id="emergencyLastName"
-                name="emergencyLastName"
-                value={formData.emergencyLastName}
-                onChange={handleChange}
-                placeholder="Last Name"
-              />
-            </div>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="emergencyPhoneNumber">Phone Number</label>
-            <input
-              type="tel"
-              id="emergencyPhoneNumber"
-              name="emergencyPhoneNumber"
-              value={formData.emergencyPhoneNumber}
-              onChange={handleChange}
-              placeholder="Phone Number"
-            />
-          </div>
+          {emergencyContacts.map((contact, index) => (
+            <div key={index} className="emergency-contact-block">
+              <div className="form-row">
+                <div className="form-group name-group">
+                  <label>First Name</label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={contact.firstName}
+                    onChange={(e) => handleEmergencyChange(index, e)}
+                    placeholder="First Name"
+                  />
+                </div>
+                <div className="form-group name-group">
+                  <label>Last Name</label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={contact.lastName}
+                    onChange={(e) => handleEmergencyChange(index, e)}
+                    placeholder="Last Name"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Phone Number</label>
+                <input
+                  type="tel"
+                  name="phoneNumber"
+                  value={contact.phoneNumber}
+                  onChange={(e) => handleEmergencyChange(index, e)}
+                  placeholder="Phone Number"
+                />
+              </div>
+              {emergencyContacts.length > 1 && (
+                <button
+                  type="button"
+                  className="remove-btn"
+                  onClick={() => handleRemoveEmergencyContact(index)}
+                  aria-label="Remove contact"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="trash-icon"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                    <line x1="10" x2="10" y1="11" y2="17"></line>
+                    <line x1="14" x2="14" y1="11" y2="17"></line>
+                  </svg>
+                </button>
+              )}
+            </div>
+          ))}
+
+          {/* Add Another Button */}
+          <button
+            type="button"
+            className="save-changes-btn edit-driver-save-btn"
+            onClick={handleAddEmergencyContact}
+          >
+            + Add Another
+          </button>
         </div>
 
         <button type="submit" className="save-changes-btn edit-driver-save-btn">
