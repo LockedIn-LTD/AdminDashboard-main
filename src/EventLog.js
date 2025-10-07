@@ -11,7 +11,6 @@ const mockEventsData = {
       heartRate: "128 BPM",
       breathingRate: "54 BPM",
       vehicleSpeed: "140 Km/h",
-      wheelHoldTime: "1 minute 30secs",
       videoUrl: "/videos/testvideo.mp4",
       hasClip: true
     },
@@ -22,7 +21,6 @@ const mockEventsData = {
       heartRate: "99 BPM",
       breathingRate: "54 BPM",
       vehicleSpeed: "140 Km/h",
-      wheelHoldTime: "2 minutes",
       hasClip: false
     },
     {
@@ -32,7 +30,6 @@ const mockEventsData = {
       heartRate: "70 BPM",
       breathingRate: "42 BPM",
       vehicleSpeed: "30 Km/h",
-      wheelHoldTime: "1 minute",
       hasClip: false
     },
     {
@@ -42,7 +39,6 @@ const mockEventsData = {
       heartRate: "120 BPM",
       breathingRate: "60 BPM",
       vehicleSpeed: "90 Km/h",
-      wheelHoldTime: "3 minutes",
       hasClip: true
     }
   ]
@@ -63,7 +59,10 @@ const EventLog = () => {
     speedStatus: "Mild"
   });
 
-  const profilePic = location.state?.profilePic || "/images/profile.png";
+  const defaultProfilePic = `${process.env.PUBLIC_URL}/images/profile.png`;
+  const profilePic = (location.state?.profilePic && location.state.profilePic.trim() !== '') 
+    ? location.state.profilePic 
+    : defaultProfilePic;
 
   useEffect(() => {
     const driverEvents = mockEventsData[driverName] || [];
@@ -147,10 +146,41 @@ const EventLog = () => {
       heartRate: "80 BPM",
       breathingRate: "50 BrPM",
       vehicleSpeed: "60 Km/h",
-      wheelHoldTime: "1 minute",
       hasClip: true,
     };
     setEvents([...events, newEvent]);
+  };
+
+  const downloadEventReport = (event) => {
+    const reportContent = `
+EVENT REPORT
+============================================
+
+Driver: ${driverName}
+Event ID: ${event.id}
+Date: ${event.date}
+
+EVENT DETAILS
+============================================
+Severity: ${event.severity}
+Heart Rate: ${event.heartRate}
+Breathing Rate: ${event.breathingRate}
+Vehicle Speed: ${event.vehicleSpeed}
+Video Clip Available: ${event.hasClip ? 'Yes' : 'No'}
+
+============================================
+Report Generated: ${new Date().toLocaleString()}
+    `.trim();
+
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${driverName}_Event_${event.id}_${event.date.replace(/\s/g, '_')}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -165,8 +195,12 @@ const EventLog = () => {
             <div className="profile-container">
               <img
                 src={profilePic}
-                alt="Profile picture"
+                alt={`${driverName} profile picture`}
                 className="profile-large"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = defaultProfilePic;
+                }}
               />
               <h1 className="driver-name">{driverName}</h1>
             </div>
@@ -234,10 +268,6 @@ const EventLog = () => {
                         <span>Vehicle Speed:</span>
                         <span>{event.vehicleSpeed}</span>
                       </div>
-                      <div className="detail-row">
-                        <span>Wheel Hold Time:</span>
-                        <span>{event.wheelHoldTime}</span>
-                      </div>
                       {event.hasClip && (
                         <div className="video-container">
                           <video controls width="100%">
@@ -246,6 +276,12 @@ const EventLog = () => {
                           </video>
                         </div>
                       )}
+                      <button 
+                        className="download-report-button" 
+                        onClick={() => downloadEventReport(event)}
+                      >
+                        Download Event Report
+                      </button>
                     </div>
                   )}
                 </div>

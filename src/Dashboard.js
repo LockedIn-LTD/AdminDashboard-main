@@ -11,7 +11,7 @@ const initialDrivers = [
     driving: "Yes", 
     color: "red", 
     createdAt: new Date(),
-    profilePic: "/images/profile.png",
+    profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
     emergencyFirstName: "",
@@ -24,7 +24,7 @@ const initialDrivers = [
     driving: "Yes", 
     color: "green", 
     createdAt: new Date(),
-    profilePic: "/images/profile.png",
+    profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
     emergencyFirstName: "",
@@ -37,7 +37,7 @@ const initialDrivers = [
     driving: "Yes", 
     color: "yellow", 
     createdAt: new Date(),
-    profilePic: "/images/profile.png",
+    profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
     emergencyFirstName: "",
@@ -50,7 +50,7 @@ const initialDrivers = [
     driving: "No", 
     color: "gray", 
     createdAt: new Date(),
-    profilePic: "/images/profile.png",
+    profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
     emergencyFirstName: "",
@@ -62,14 +62,13 @@ const initialDrivers = [
     status: "Unstable", 
     driving: "No", 
     color: "gray", 
-    color: "gray", 
     createdAt: new Date(),
-    profilePic: "/images/profile.png",
+    profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
     emergencyFirstName: "",
     emergencyLastName: "",
-  }  
+    emergencyPhoneNumber: ""
   }  
 ];
 
@@ -86,8 +85,10 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [removedDriverName, setRemovedDriverName] = useState("");
-  const [showToast, setShowToast] = useState(false);
-  const [removedDriverName, setRemovedDriverName] = useState("");
+  
+  // Popup state management
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [driverToDelete, setDriverToDelete] = useState(null);
 
   useEffect(() => {
     localStorage.setItem('drivers', JSON.stringify(drivers));
@@ -116,16 +117,13 @@ const Dashboard = () => {
     }
   }, [location.state]);
 
+  // Auto-hide toast after 3 seconds
   useEffect(() => {
     if (showToast) {
-      const timer = setTimeout(() => {setShowToast(false);}, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showToast]);
-
-  useEffect(() => {
-    if (showToast) {
-      const timer = setTimeout(() => {setShowToast(false);}, 3000);
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+      
       return () => clearTimeout(timer);
     }
   }, [showToast]);
@@ -142,33 +140,26 @@ const Dashboard = () => {
     navigate('/add-driver');
   };
 
+  const openDeletePopup = (driver) => {
+    setDriverToDelete(driver);
+    setIsPopupOpen(true);
+  };
+  
+  const closeDeletePopup = () => {
+    setDriverToDelete(null);
+    setIsPopupOpen(false);
+  };
+
+  const confirmDelete = () => {
+    setDrivers(drivers.filter(driver => driver.name !== driverToDelete.name));
+    setRemovedDriverName(driverToDelete.name);
+    setShowToast(true);
+    closeDeletePopup();
+  };
+
   const handleRemoveDriver = (index) => {
     const driver = filteredDrivers[index];
     openDeletePopup(driver);
-  };
-
-    // Popup state management
-    const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const [driverToDelete, setDriverToDelete] = useState(null);
-  
-    const openDeletePopup = (driver) => {
-      setDriverToDelete(driver);
-      setIsPopupOpen(true);
-    };
-    
-    const closeDeletePopup = () => {
-      setDriverToDelete(null);
-      setIsPopupOpen(false);
-    };
-  
-    const confirmDelete = () => {
-      setDrivers(drivers.filter(driver => driver.name !== driverToDelete.name));
-      closeDeletePopup();
-    };  
-    const driverName = filteredDrivers[index].name;
-    setDrivers(drivers.filter(driver => driver.name !== driverName));
-    setRemovedDriverName(driverName);
-    setShowToast(true);
   };
 
   const handleEditDriver = (driver) => {
@@ -224,14 +215,16 @@ const Dashboard = () => {
       </nav>
 
       <h2 className="title">Connected Drivers</h2>
+      
       <Popup 
         isOpen={isPopupOpen}
         onClose={closeDeletePopup}
         onConfirm={confirmDelete}
         message={
-          <>Are you sure you want to delete <br />
-          {driverToDelete?.name}?</>}
-        />
+          <>Do you wish to delete driver <br />
+          {driverToDelete?.name}?</>
+        }
+      />
 
       <div className="controls">
         <button className="add-driver" onClick={handleAddDriver}>
@@ -292,7 +285,7 @@ const Dashboard = () => {
               className="profile"
               onError={(e) => {
                 e.target.onerror = null; 
-                e.target.src = "/images/profile.png";
+                e.target.src = `${process.env.PUBLIC_URL}/images/profile.png`;
               }}
             />
             <h3>{driver.name}</h3>
@@ -309,27 +302,8 @@ const Dashboard = () => {
           </div>
         ))}
       </div>
-      {showToast && (
-        <div className="toast-notification">
-          <div className="toast-content">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="check-icon"
-            >
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span>Driver "{removedDriverName}" successfully removed</span>
-          </div>
-        </div>
-      )}
+
+      {/* Toast notification for driver removal */}
       {showToast && (
         <div className="toast-notification">
           <div className="toast-content">
