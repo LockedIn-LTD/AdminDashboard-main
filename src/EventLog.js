@@ -154,35 +154,6 @@ const EventLog = () => {
   const downloadEventReport = (event) => {
     const reportContent = `
 EVENT REPORT
-============================================
-
-Driver: ${driverName}
-Event ID: ${event.id}
-Date: ${event.date}
-
-EVENT DETAILS
-============================================
-Severity: ${event.severity}
-Heart Rate: ${event.heartRate}
-Breathing Rate: ${event.breathingRate}
-Vehicle Speed: ${event.vehicleSpeed}
-Video Clip Available: ${event.hasClip ? 'Yes' : 'No'}
-
-============================================
-Report Generated: ${new Date().toLocaleString()}
-    `.trim();
-
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${driverName}_Event_${event.id}_${event.date.replace(/\s/g, '_')}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  };
-
   return (
     <div className="main-content">
       <div className="event-log-container">
