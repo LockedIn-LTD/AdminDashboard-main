@@ -58,23 +58,97 @@ const EditDriver = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const updatedDriver = {
-      ...driverData,
-      name: `${formData.firstName} ${formData.lastName}`.trim(),
-      profilePic: formData.previewImage || driverData.profilePic,
-      phoneNumber: formData.phoneNumber,
-      productId: formData.productId,
-      emergencyContacts,
-    };
+    
+    const updatedName = `${formData.firstName} ${formData.lastName}`.trim();
+    
+    // Format emergency contacts for API
+    const formattedEmergencyContacts = emergencyContacts
+      .filter(contact => contact.firstName || contact.lastName || contact.phoneNumber)
+      .map(contact => ({
+        name: `${contact.firstName} ${contact.lastName}`.trim(),
+        phone_number: contact.phoneNumber
+      }));
 
-    navigate("/dashboard", {
-      state: {
-        updatedDriver,
-        originalName: driverData.name,
-      },
-    });
+    try {
+      // Update name if changed
+      if (updatedName !== driverData.name) {
+        const nameResponse = await fetch(`http://localhost:5001/drivers/${driverData.driverId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fieldToChange: 'name',
+            newValue: updatedName
+          })
+        });
+
+        if (!nameResponse.ok) {
+          const errorData = await nameResponse.json();
+          throw new Error(errorData.error || 'Failed to update driver name');
+        }
+      }
+
+      // Update phone number if changed
+      if (formData.phoneNumber !== driverData.phoneNumber) {
+        const phoneResponse = await fetch(`http://localhost:5001/drivers/${driverData.driverId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fieldToChange: 'phone_number',
+            newValue: formData.phoneNumber
+          })
+        });
+
+        if (!phoneResponse.ok) {
+          const errorData = await phoneResponse.json();
+          throw new Error(errorData.error || 'Failed to update phone number');
+        }
+      }
+
+      // Always update emergency contacts (simpler approach - just update them every time)
+      const contactsResponse = await fetch(`http://localhost:5001/drivers/${driverData.driverId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fieldToChange: 'emergency_contacts',
+          newValue: formattedEmergencyContacts
+        })
+      });
+
+      if (!contactsResponse.ok) {
+        const errorData = await contactsResponse.json();
+        throw new Error(errorData.error || 'Failed to update emergency contacts');
+      }
+
+      console.log('Driver updated successfully');
+
+      // Create updated driver object for local state
+      const updatedDriver = {
+        ...driverData,
+        name: updatedName,
+        profilePic: formData.previewImage || driverData.profilePic,
+        phoneNumber: formData.phoneNumber,
+        productId: formData.productId,
+        emergencyContacts,
+      };
+
+      navigate("/dashboard", {
+        state: {
+          updatedDriver,
+          originalName: driverData.name,
+        },
+      });
+    } catch (error) {
+      console.error('Error updating driver:', error);
+      alert(`Failed to update driver: ${error.message}`);
+    }
   };
 
   return (

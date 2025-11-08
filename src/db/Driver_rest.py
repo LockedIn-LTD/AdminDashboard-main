@@ -3,37 +3,40 @@ from Database import Database
 from Driver import Driver
 from User import EmergencyContact
 from Event import Event
+from flask_cors import CORS
 import json
 
 app = Flask(__name__)
+CORS(app)
 
 PROJECT_ID = "drivesense-c1d4c"
 CREDENTIALS_FILE = r"C:\Users\Kevin\Documents\Cookies-n-cream\src\db\database_key.json"
 DRIVER_COLLECTION = "drivers"
+EVENT_COLLECTION = "events"
 
 db_handler = Database(PROJECT_ID, credentials_path=CREDENTIALS_FILE)
 
-def create_new_driver(driver_id, name, phone_number, email, emergency_contacts=None, events=None, time_stamp="", date="", heart_rate=0, vehicle_speed=0, video_link=""):
+def create_new_driver(driver_id, name, phone_number, emergency_contacts=None, events=None, time_stamp="", date="", heart_rate=0, blood_oxygen_level=0, vehicle_speed=0, video_link=""):
     """
     Creates a new driver in the database with all driver fields.
     Uses the arguments to make a driver object, map it to dictionary,
     and use the db handler to set/create that driver.
     """
     try:
-        driver = Driver(name, phone_number, email)
+        driver = Driver(name, phone_number)
         
         driver.set_time_stamp(time_stamp)
         driver.set_date(date)
+        driver.set_heart_rate(heart_rate)
+        driver.set_blood_oxygen_level(blood_oxygen_level)
+        driver.set_vehicle_speed(vehicle_speed)
         driver.set_video_link(video_link)
-        driver._heart_rate = heart_rate
-        driver._vehicle_speed = vehicle_speed
         
         if emergency_contacts:
             for contact_data in emergency_contacts:
                 contact = EmergencyContact(
                     contact_data.get('name', ''),
                     contact_data.get('phone_number', ''),
-                    contact_data.get('relationship', '')
                 )
                 driver.add_emergency_contact(contact)
         
@@ -46,9 +49,15 @@ def create_new_driver(driver_id, name, phone_number, email, emergency_contacts=N
                     event_data.get('date', ''),
                     event_data.get('videoLink', ''),
                     event_data.get('heartRate', 0),
+                    event_data.get('bloodOxygenLevel', 0),
                     event_data.get('vehicleSpeed', 0)
                 )
                 driver.add_event(event)
+                
+                # Also create event in events collection with driver link
+                event_dict = event.to_map()
+                event_dict['driverId'] = driver_id
+                db_handler.set_document(EVENT_COLLECTION, event_data.get('eventId'), event_dict)
         
         driver_data = driver.to_map()
         
@@ -74,7 +83,7 @@ def edit_driver_field(field_to_change, new_value, driver_id):
 
 def remove_driver(driver_id):
     """
-    Removes a driver from the database.
+    Removes a driver from the database AND all their associated events.
     """
     try:
         existing_driver = db_handler.get_document(DRIVER_COLLECTION, driver_id)
@@ -82,6 +91,17 @@ def remove_driver(driver_id):
         if not existing_driver:
             raise Exception("Driver not found")
         
+        # Delete all events associated with this driver
+        events = existing_driver.get('events', [])
+        for event in events:
+            event_id = event.get('eventId')
+            if event_id:
+                try:
+                    db_handler._db.collection(EVENT_COLLECTION).document(event_id).delete()
+                except:
+                    pass  # Continue even if event doesn't exist
+        
+        # Delete the driver
         db_handler._db.collection(DRIVER_COLLECTION).document(driver_id).delete()
         
         return True
@@ -102,7 +122,7 @@ def get_driver_by_id(driver_id):
     except Exception as e:
         raise Exception(f"Failed to retrieve driver: {str(e)}")
 
-def add_emergency_contact_to_driver(driver_id, contact_name, contact_phone, contact_relationship):
+def add_emergency_contact_to_driver(driver_id, contact_name, contact_phone):
     """
     Adds an emergency contact to a driver.
     """
@@ -111,8 +131,7 @@ def add_emergency_contact_to_driver(driver_id, contact_name, contact_phone, cont
         
         new_contact = {
             "name": contact_name,
-            "phone_number": contact_phone,
-            "relationship": contact_relationship
+            "phone_number": contact_phone
         }
         
         if "emergency_contacts" not in driver_data:
@@ -126,9 +145,9 @@ def add_emergency_contact_to_driver(driver_id, contact_name, contact_phone, cont
     except Exception as e:
         raise Exception(f"Failed to add emergency contact: {str(e)}")
 
-def add_event_to_driver(driver_id, event_id, status, time_stamp, date, video_link, heart_rate=0, vehicle_speed=0):
+def add_event_to_driver(driver_id, event_id, status, time_stamp, date, video_link, heart_rate=0, blood_oxygen_level=0, vehicle_speed=0):
     """
-    Adds an event to a driver.
+    Adds an event to a driver AND creates it in the events collection.
     """
     try:
         driver_data = get_driver_by_id(driver_id)
@@ -140,6 +159,7 @@ def add_event_to_driver(driver_id, event_id, status, time_stamp, date, video_lin
             "date": date,
             "videoLink": video_link,
             "heartRate": heart_rate,
+            "bloodOxygenLevel": blood_oxygen_level,
             "vehicleSpeed": vehicle_speed
         }
         
@@ -148,6 +168,11 @@ def add_event_to_driver(driver_id, event_id, status, time_stamp, date, video_lin
         
         driver_data["events"].append(new_event)        
         db_handler.set_document(DRIVER_COLLECTION, driver_id, driver_data)
+        
+        # Also create event in events collection
+        event_data = new_event.copy()
+        event_data['driverId'] = driver_id
+        db_handler.set_document(EVENT_COLLECTION, event_id, event_data)
         
         return new_event
     except Exception as e:
@@ -162,19 +187,19 @@ def create_driver():
         "driverId": "string",
         "name": "string", 
         "phoneNumber": "string",
-        "email": "string",
-        "emergencyContacts": [{"name": "string", "phone_number": "string", "relationship": "string"}],
-        "events": [{"eventId": "string", "status": "string", "timeStamp": "string", "date": "string", "videoLink": "string", "heartRate": 0, "vehicleSpeed": 0}],
+        "emergencyContacts": [{"name": "string", "phone_number": "string"}],
+        "events": [{"eventId": "string", "status": "string", "timeStamp": "string", "date": "string", "videoLink": "string", "heartRate": 0, "bloodOxygenLevel": 0, "vehicleSpeed": 0}],
         "timeStamp": "string",
         "date": "string",
         "heartRate": 0,
+        "bloodOxygenLevel": 0,
         "vehicleSpeed": 0,
         "videoLink": "string"
     }
     """
     try:
         data = request.get_json()        
-        required_fields = ['driverId', 'name', 'phoneNumber', 'email']
+        required_fields = ['driverId', 'name', 'phoneNumber']
         
         for field in required_fields:
             if field not in data:
@@ -184,12 +209,12 @@ def create_driver():
             data['driverId'],
             data['name'],
             data['phoneNumber'],
-            data['email'],
             data.get('emergencyContacts'),
             data.get('events'),
             data.get('timeStamp', ''),
             data.get('date', ''),
             data.get('heartRate', 0),
+            data.get('bloodOxygenLevel', 0),
             data.get('vehicleSpeed', 0),
             data.get('videoLink', '')
         )
@@ -237,7 +262,7 @@ def update_driver(driver_id):
 @app.route('/drivers/<driver_id>', methods=['DELETE'])
 def delete_driver(driver_id):
     """
-    Removes a driver from the database.
+    Removes a driver from the database and all their events.
     """
     try:
         remove_driver(driver_id)
@@ -273,12 +298,11 @@ def add_emergency_contact(driver_id):
     Expected JSON payload: {
         "name": "string",
         "phoneNumber": "string",
-        "relationship": "string"
     }
     """
     try:
         data = request.get_json()        
-        required_fields = ['name', 'phoneNumber', 'relationship']
+        required_fields = ['name', 'phoneNumber']
         
         for field in required_fields:
             if field not in data:
@@ -288,7 +312,6 @@ def add_emergency_contact(driver_id):
             driver_id,
             data['name'],
             data['phoneNumber'],
-            data['relationship']
         )
         
         return jsonify({
@@ -302,7 +325,7 @@ def add_emergency_contact(driver_id):
 @app.route('/drivers/<driver_id>/events', methods=['POST'])
 def add_event(driver_id):
     """
-    Adds an event to a driver.
+    Adds an event to a driver and creates it in events collection.
     Expected JSON payload: {
         "eventId": "string",
         "status": "string",
@@ -310,6 +333,7 @@ def add_event(driver_id):
         "date": "string",
         "videoLink": "string",
         "heartRate": 0,
+        "bloodOxygenLevel": 0,
         "vehicleSpeed": 0
     }
     """
@@ -329,11 +353,11 @@ def add_event(driver_id):
             data['date'],
             data['videoLink'],
             data.get('heartRate', 0),
+            data.get('bloodOxygenLevel', 0),
             data.get('vehicleSpeed', 0)
         )
         
         return jsonify({
-            
             'message': 'Event added successfully',
             'event': new_event
         }), 201
@@ -341,6 +365,6 @@ def add_event(driver_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
-

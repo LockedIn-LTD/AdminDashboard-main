@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./StyleSheets/index.css";
 
+// Helper function to generate unique IDs
+const generateDriverId = (name) => {
+  return `driver_${name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
+};
+
 const AddDriver = () => {
   const navigate = useNavigate();
   
@@ -56,25 +61,74 @@ const AddDriver = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newDriver = {
-      name: `${formData.firstName} ${formData.lastName}`.trim(),
-      status: "Idle",
-      driving: "No",
-      color: "gray",
-      createdAt: new Date(),
-      profilePic: formData.previewImage || "/images/profile.png",
+    
+    const driverName = `${formData.firstName} ${formData.lastName}`.trim();
+    const driverId = generateDriverId(driverName);
+    
+    // Format emergency contacts for API (only include filled ones)
+    const formattedEmergencyContacts = emergencyContacts
+      .filter(contact => contact.firstName || contact.lastName || contact.phoneNumber)
+      .map(contact => ({
+        name: `${contact.firstName} ${contact.lastName}`.trim(),
+        phone_number: contact.phoneNumber
+      }));
+
+    // Prepare API payload
+    const apiPayload = {
+      driverId: driverId,
+      name: driverName,
       phoneNumber: formData.phoneNumber,
-      productId: formData.productId,
-      emergencyContacts
+      emergencyContacts: formattedEmergencyContacts,
+      events: [],
+      timeStamp: "",
+      date: "",
+      heartRate: 0,
+      vehicleSpeed: 0,
+      videoLink: ""
     };
 
-    navigate("/dashboard", { 
-      state: { 
-        newDriver 
-      } 
-    });
+    try {
+      const response = await fetch('http://localhost:5001/drivers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(apiPayload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create driver');
+      }
+
+      const result = await response.json();
+      console.log('Driver created successfully:', result);
+
+      // Create driver object for local state (to pass to dashboard)
+      const newDriver = {
+        driverId: driverId,
+        name: driverName,
+        status: "Idle",
+        driving: "No",
+        color: "gray",
+        createdAt: new Date(),
+        profilePic: formData.previewImage || "/images/profile.png",
+        phoneNumber: formData.phoneNumber,
+        productId: formData.productId,
+        emergencyContacts
+      };
+
+      navigate("/dashboard", { 
+        state: { 
+          newDriver 
+        } 
+      });
+    } catch (error) {
+      console.error('Error creating driver:', error);
+      alert(`Failed to create driver: ${error.message}`);
+    }
   };
 
   return (

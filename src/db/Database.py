@@ -66,7 +66,10 @@ class Database:
             return
 
         try:
+            
             self._db.collection(collection).document(doc_id).update(updates)
+            #self._db.collection(collection).document(doc_id)
+            
             print(f"Document '{doc_id}' updated successfully in collection '{collection}'.")
         except Exception as e:
             print(f"Error updating document '{doc_id}': {e}")

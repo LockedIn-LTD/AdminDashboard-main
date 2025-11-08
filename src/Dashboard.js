@@ -6,6 +6,7 @@ import Popup from "./Components/Popup";
 
 const initialDrivers = [
   { 
+    driverId: "driver_david_brown_1",
     name: "David Brown", 
     status: "Severe", 
     driving: "Yes", 
@@ -19,6 +20,7 @@ const initialDrivers = [
     emergencyPhoneNumber: ""
   },
   { 
+    driverId: "driver_joe_smith_1",
     name: "Joe Smith", 
     status: "LockedIn", 
     driving: "Yes", 
@@ -32,6 +34,7 @@ const initialDrivers = [
     emergencyPhoneNumber: ""
   },
   { 
+    driverId: "driver_joe_rogan_1",
     name: "Joe Rogan", 
     status: "Unstable", 
     driving: "Yes", 
@@ -45,6 +48,7 @@ const initialDrivers = [
     emergencyPhoneNumber: ""
   },
   { 
+    driverId: "driver_john_adams_1",
     name: "John Adams", 
     status: "Idle", 
     driving: "No", 
@@ -58,6 +62,7 @@ const initialDrivers = [
     emergencyPhoneNumber: ""
   },
   { 
+    driverId: "driver_alice_wills_1",
     name: "Alice Wills", 
     status: "Unstable", 
     driving: "No", 
@@ -110,7 +115,7 @@ const Dashboard = () => {
       setDrivers(prevDrivers => {
         const newDriver = location.state.newDriver;
         const exists = prevDrivers.some(driver => 
-          driver.name.toLowerCase() === newDriver.name.toLowerCase()
+          driver.driverId === newDriver.driverId
         );
         return exists ? prevDrivers : [...prevDrivers, newDriver];
       });
@@ -150,11 +155,30 @@ const Dashboard = () => {
     setIsPopupOpen(false);
   };
 
-  const confirmDelete = () => {
-    setDrivers(drivers.filter(driver => driver.name !== driverToDelete.name));
-    setRemovedDriverName(driverToDelete.name);
-    setShowToast(true);
-    closeDeletePopup();
+  const confirmDelete = async () => {
+    try {
+      const response = await fetch(`http://localhost:5001/drivers/${driverToDelete.driverId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete driver');
+      }
+
+      // Only update local state if API call was successful
+      setDrivers(drivers.filter(driver => driver.driverId !== driverToDelete.driverId));
+      setRemovedDriverName(driverToDelete.name);
+      setShowToast(true);
+      closeDeletePopup();
+    } catch (error) {
+      console.error('Error deleting driver:', error);
+      alert(`Failed to delete driver: ${error.message}`);
+      closeDeletePopup();
+    }
   };
 
   const handleRemoveDriver = (index) => {
@@ -271,10 +295,11 @@ const Dashboard = () => {
       <div className="drivers-grid">
         {filteredDrivers.map((driver, index) => (
           <div 
-            key={`${driver.name}-${index}`} 
+            key={driver.driverId} 
             className={`driver-card ${driver.color}`}
             onClick={() => navigate(`/event-log/${driver.name}`, {
               state: {
+                driverId: driver.driverId,  // FIXED: Changed from driver.id to driver.driverId
                 profilePic: driver.profilePic
               }
             })}
