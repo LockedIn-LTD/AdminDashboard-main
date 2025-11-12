@@ -647,25 +647,6 @@ body {
   box-sizing: border-box;
 }
 
-.forgot-password-button {
-  width: 100%;
-  padding: 12px 20px;
-  background-color: #4a6bff;
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-family: "Poppins", Arial, sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.forgot-password-button:hover {
-  background-color: #3a56d4;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
 /* Sign In Button */
 .login-button {
   font-family: "Poppins", Arial, sans-serif;

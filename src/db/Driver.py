@@ -5,9 +5,11 @@ from typing import Dict, Any, List
 
 class Driver:
     """Represents a driver, potentially including their safety data."""
-    def __init__(self, name: str, phone_number: str):
+    def __init__(self, name: str, phone_number: str, profile_pic: str = "", product_id: int = 0):
         self._name = name
         self._phone_number = phone_number
+        self._profile_pic = profile_pic
+        self._product_id = product_id
         self._emergency_contacts: List[EmergencyContact] = []
         self._events: List[Event] = []
         
@@ -25,6 +27,12 @@ class Driver:
 
     def get_phone_number(self) -> str:
         return self._phone_number
+    
+    def get_profile_pic(self) -> str:
+        return self._profile_pic
+    
+    def get_product_id(self) -> int:
+        return self._product_id
 
     def get_emergency_contacts(self) -> List[EmergencyContact]:
         return self._emergency_contacts
@@ -56,6 +64,12 @@ class Driver:
 
     def set_phone_number(self, p: str):
         self._phone_number = p
+    
+    def set_profile_pic(self, pic: str):
+        self._profile_pic = pic
+    
+    def set_product_id(self, pid: int):
+        self._product_id = pid
 
     def add_emergency_contact(self, contact: EmergencyContact):
         self._emergency_contacts.append(contact)
@@ -86,6 +100,8 @@ class Driver:
         return {
             "name": self._name,
             "phone_number": self._phone_number,
+            "profilePic": self._profile_pic,
+            "productId": self._product_id,
             "emergency_contacts": [c.to_map() for c in self._emergency_contacts],
             "events": [e.to_map() for e in self._events],
             "timeStamp": self._time_stamp,

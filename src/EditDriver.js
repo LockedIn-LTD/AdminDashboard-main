@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./StyleSheets/index.css";
 
@@ -8,19 +8,81 @@ const EditDriver = () => {
   const driverData = location.state?.driver || {};
   
   const [formData, setFormData] = useState({
-    firstName: driverData.name ? driverData.name.split(" ")[0] : "",
-    lastName: driverData.name ? driverData.name.split(" ").slice(1).join(" ") : "",
-    phoneNumber: driverData.phoneNumber || "",
-    productId: driverData.productId || "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    productId: "",
     profilePicture: null,
-    previewImage: driverData.profilePic || null,
+    previewImage: null,
   });
 
-  const [emergencyContacts, setEmergencyContacts] = useState(
-    driverData.emergencyContacts?.length > 0
-      ? driverData.emergencyContacts
-      : [{ firstName: "", lastName: "", phoneNumber: "" }]
-  );
+  const [emergencyContacts, setEmergencyContacts] = useState([
+    { firstName: "", lastName: "", phoneNumber: "" }
+  ]);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // Fetch driver data from API on component mount
+  useEffect(() => {
+    const fetchDriverData = async () => {
+      if (!driverData.driverId) {
+        setError("No driver ID provided");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:5001/drivers/${driverData.driverId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch driver data');
+        }
+
+        const data = await response.json();
+        const driver = data.driver;
+
+        console.log('Fetched driver data:', driver);
+
+        // Parse name
+        const nameParts = (driver.name || "").split(" ");
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        // Set form data
+        setFormData({
+          firstName: firstName,
+          lastName: lastName,
+          phoneNumber: driver.phone_number || "",
+          productId: driver.productId || "",
+          profilePicture: null,
+          previewImage: driver.profilePic || driverData.profilePic || null,
+        });
+
+        // Parse emergency contacts
+        if (driver.emergency_contacts && driver.emergency_contacts.length > 0) {
+          const contacts = driver.emergency_contacts.map(contact => {
+            const contactNameParts = (contact.name || "").split(" ");
+            return {
+              firstName: contactNameParts[0] || "",
+              lastName: contactNameParts.slice(1).join(" ") || "",
+              phoneNumber: contact.phone_number || ""
+            };
+          });
+          setEmergencyContacts(contacts);
+        }
+
+      } catch (err) {
+        console.error('Error fetching driver:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDriverData();
+  }, [driverData.driverId, driverData.profilePic]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,20 +112,36 @@ const EditDriver = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        profilePicture: file,
-        previewImage: URL.createObjectURL(file),
-      }));
+      // Validate file size (max 500KB)
+      if (file.size > 500000) {
+        alert('Image file is too large. Please select an image smaller than 500KB.');
+        return;
+      }
+
+      // Convert image to Base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({
+          ...prev,
+          profilePicture: file,
+          previewImage: reader.result, // Base64 string
+        }));
+      };
+      reader.onerror = () => {
+        alert('Error reading file. Please try again.');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setIsSaving(true);
     
     const updatedName = `${formData.firstName} ${formData.lastName}`.trim();
     
-    // Format emergency contacts for API
+    // Format emergency contacts for API (matching the field name in Driver.py)
     const formattedEmergencyContacts = emergencyContacts
       .filter(contact => contact.firstName || contact.lastName || contact.phoneNumber)
       .map(contact => ({
@@ -89,6 +167,7 @@ const EditDriver = () => {
           const errorData = await nameResponse.json();
           throw new Error(errorData.error || 'Failed to update driver name');
         }
+        console.log('Name updated successfully');
       }
 
       // Update phone number if changed
@@ -108,9 +187,51 @@ const EditDriver = () => {
           const errorData = await phoneResponse.json();
           throw new Error(errorData.error || 'Failed to update phone number');
         }
+        console.log('Phone number updated successfully');
       }
 
-      // Always update emergency contacts (simpler approach - just update them every time)
+      // Update product ID if changed
+      if (formData.productId !== driverData.productId) {
+        const productResponse = await fetch(`http://localhost:5001/drivers/${driverData.driverId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fieldToChange: 'productId',
+            newValue: parseInt(formData.productId) || 0
+          })
+        });
+
+        if (!productResponse.ok) {
+          const errorData = await productResponse.json();
+          throw new Error(errorData.error || 'Failed to update product ID');
+        }
+        console.log('Product ID updated successfully');
+      }
+
+      // Update profile picture if changed
+      if (formData.previewImage !== driverData.profilePic) {
+        console.log('Updating profile picture, length:', formData.previewImage?.length || 0);
+        const picResponse = await fetch(`http://localhost:5001/drivers/${driverData.driverId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fieldToChange: 'profilePic',
+            newValue: formData.previewImage || ""
+          })
+        });
+
+        if (!picResponse.ok) {
+          const errorData = await picResponse.json();
+          throw new Error(errorData.error || 'Failed to update profile picture');
+        }
+        console.log('Profile picture updated successfully');
+      }
+
+      // Update emergency contacts
       const contactsResponse = await fetch(`http://localhost:5001/drivers/${driverData.driverId}`, {
         method: 'PUT',
         headers: {
@@ -126,34 +247,59 @@ const EditDriver = () => {
         const errorData = await contactsResponse.json();
         throw new Error(errorData.error || 'Failed to update emergency contacts');
       }
+      console.log('Emergency contacts updated successfully');
 
-      console.log('Driver updated successfully');
+      alert('Driver updated successfully!');
 
-      // Create updated driver object for local state
-      const updatedDriver = {
-        ...driverData,
-        name: updatedName,
-        profilePic: formData.previewImage || driverData.profilePic,
-        phoneNumber: formData.phoneNumber,
-        productId: formData.productId,
-        emergencyContacts,
-      };
+      // Navigate back to dashboard (it will fetch fresh data from Firebase)
+      navigate("/dashboard");
 
-      navigate("/dashboard", {
-        state: {
-          updatedDriver,
-          originalName: driverData.name,
-        },
-      });
     } catch (error) {
       console.error('Error updating driver:', error);
+      setError(error.message);
       alert(`Failed to update driver: ${error.message}`);
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="manage-account-container">
+        <h1 className="edit-driver-title">Edit Driver</h1>
+        <p style={{ textAlign: 'center', padding: '20px' }}>Loading driver data...</p>
+      </div>
+    );
+  }
+
+  if (error && !formData.firstName) {
+    return (
+      <div className="manage-account-container">
+        <h1 className="edit-driver-title">Edit Driver</h1>
+        <p style={{ textAlign: 'center', padding: '20px', color: 'red' }}>Error: {error}</p>
+        <button onClick={() => navigate("/dashboard")} className="save-changes-btn">
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="manage-account-container">
       <h1 className="edit-driver-title">Edit Driver</h1>
+
+      {error && (
+        <div style={{
+          color: 'red',
+          backgroundColor: '#ffe6e6',
+          padding: '10px',
+          borderRadius: '4px',
+          marginBottom: '15px',
+          textAlign: 'center'
+        }}>
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="account-form">
         <div className="profile-picture-section">
@@ -177,10 +323,14 @@ const EditDriver = () => {
             accept="image/*"
             onChange={handleImageChange}
             className="profile-picture-input"
+            disabled={isSaving}
           />
           <label htmlFor="profile-picture" className="change-photo-btn">
             Change Photo
           </label>
+          <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+            Max file size: 500KB
+          </p>
         </div>
 
         <div className="edit-driver-fields">
@@ -195,6 +345,7 @@ const EditDriver = () => {
                 onChange={handleChange}
                 placeholder="First Name"
                 required
+                disabled={isSaving}
               />
             </div>
             <div className="form-group name-group">
@@ -207,6 +358,7 @@ const EditDriver = () => {
                 onChange={handleChange}
                 placeholder="Last Name"
                 required
+                disabled={isSaving}
               />
             </div>
           </div>
@@ -220,18 +372,20 @@ const EditDriver = () => {
               value={formData.phoneNumber}
               onChange={handleChange}
               placeholder="Phone Number"
+              disabled={isSaving}
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="productId">Product ID</label>
             <input
-              type="text"
+              type="number"
               id="productId"
               name="productId"
               value={formData.productId}
               onChange={handleChange}
               placeholder="Product ID"
+              disabled={isSaving}
             />
           </div>
 
@@ -248,6 +402,7 @@ const EditDriver = () => {
                     value={contact.firstName}
                     onChange={(e) => handleEmergencyChange(index, e)}
                     placeholder="First Name"
+                    disabled={isSaving}
                   />
                 </div>
                 <div className="form-group name-group">
@@ -258,6 +413,7 @@ const EditDriver = () => {
                     value={contact.lastName}
                     onChange={(e) => handleEmergencyChange(index, e)}
                     placeholder="Last Name"
+                    disabled={isSaving}
                   />
                 </div>
               </div>
@@ -269,6 +425,7 @@ const EditDriver = () => {
                   value={contact.phoneNumber}
                   onChange={(e) => handleEmergencyChange(index, e)}
                   placeholder="Phone Number"
+                  disabled={isSaving}
                 />
               </div>
               {emergencyContacts.length > 1 && (
@@ -277,6 +434,7 @@ const EditDriver = () => {
                   className="remove-btn"
                   onClick={() => handleRemoveEmergencyContact(index)}
                   aria-label="Remove contact"
+                  disabled={isSaving}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -305,13 +463,14 @@ const EditDriver = () => {
             type="button"
             className="save-changes-btn edit-driver-save-btn"
             onClick={handleAddEmergencyContact}
+            disabled={isSaving}
           >
             + Add Another
           </button>
         </div>
 
-        <button type="submit" className="save-changes-btn edit-driver-save-btn">
-          Save Changes
+        <button type="submit" className="save-changes-btn edit-driver-save-btn" disabled={isSaving}>
+          {isSaving ? "Saving Changes..." : "Save Changes"}
         </button>
       </form>
     </div>

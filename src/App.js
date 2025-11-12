@@ -7,6 +7,7 @@ import ContactUs from "./ContactUs";
 import Navbar from "./Components/Navbar";
 import ForgotPassword from "./ForgotPassword";
 import CreateAccount from "./CreateAccount";
+import ResetPassword from "./ResetPassword";
 import EventLog from "./EventLog";
 import EditDriver from "./EditDriver";
 import AddDriver from "./AddDriver";
@@ -21,6 +22,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/createaccount" element={<CreateAccount />} />
+        <Route path="/resetpassword" element={<ResetPassword />} />
 
         {/* Protected routes (accessible only after login) */}
         <Route
@@ -82,7 +84,7 @@ function App() {
 // Navbar only visible after login
 function NavbarExclusion() {
   const { pathname } = useLocation();
-  const hideNavbarPaths = ["/", "/forgotpassword", "/createaccount"];
+  const hideNavbarPaths = ["/", "/forgotpassword", "/createaccount", "/resetpassword"];
   const showNavbar = !hideNavbarPaths.includes(pathname);
 
   return showNavbar && <Navbar />;

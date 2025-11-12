@@ -18,6 +18,7 @@ const AddDriver = () => {
     profilePicture: null,
     previewImage: null,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Emergency contacts as an array
   const [emergencyContacts, setEmergencyContacts] = useState([
@@ -53,16 +54,34 @@ const AddDriver = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData(prev => ({
-        ...prev,
-        profilePicture: file,
-        previewImage: URL.createObjectURL(file),
-      }));
+      // Validate file size (max 500KB)
+      if (file.size > 500000) {
+        alert('Image file is too large. Please select an image smaller than 500KB.');
+        return;
+      }
+
+      // Convert image to Base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          profilePicture: file,
+          previewImage: reader.result, // Base64 string
+        }));
+      };
+      reader.onerror = () => {
+        alert('Error reading file. Please try again.');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isSubmitting) return; // Prevent double submission
+    
+    setIsSubmitting(true);
     
     const driverName = `${formData.firstName} ${formData.lastName}`.trim();
     const driverId = generateDriverId(driverName);
@@ -75,19 +94,24 @@ const AddDriver = () => {
         phone_number: contact.phoneNumber
       }));
 
-    // Prepare API payload
+    // Prepare API payload with profilePic and productId
     const apiPayload = {
       driverId: driverId,
       name: driverName,
       phoneNumber: formData.phoneNumber,
+      profilePic: formData.previewImage || "",
+      productId: parseInt(formData.productId) || 0,
       emergencyContacts: formattedEmergencyContacts,
       events: [],
       timeStamp: "",
       date: "",
       heartRate: 0,
+      bloodOxygenLevel: 0,
       vehicleSpeed: 0,
       videoLink: ""
     };
+
+    console.log('Submitting driver with profile pic length:', apiPayload.profilePic.length);
 
     try {
       const response = await fetch('http://localhost:5001/drivers', {
@@ -106,28 +130,15 @@ const AddDriver = () => {
       const result = await response.json();
       console.log('Driver created successfully:', result);
 
-      // Create driver object for local state (to pass to dashboard)
-      const newDriver = {
-        driverId: driverId,
-        name: driverName,
-        status: "Idle",
-        driving: "No",
-        color: "gray",
-        createdAt: new Date(),
-        profilePic: formData.previewImage || "/images/profile.png",
-        phoneNumber: formData.phoneNumber,
-        productId: formData.productId,
-        emergencyContacts
-      };
+      alert('Driver added successfully!');
 
-      navigate("/dashboard", { 
-        state: { 
-          newDriver 
-        } 
-      });
+      // Navigate back to dashboard (it will fetch fresh data)
+      navigate("/dashboard");
     } catch (error) {
       console.error('Error creating driver:', error);
       alert(`Failed to create driver: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -156,10 +167,14 @@ const AddDriver = () => {
             accept="image/*"
             onChange={handleImageChange}
             className="profile-picture-input"
+            disabled={isSubmitting}
           />
           <label htmlFor="profile-picture" className="change-photo-btn">
             Change Photo
           </label>
+          <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+            Max file size: 500KB
+          </p>
         </div>
 
         <div className="edit-driver-fields">
@@ -174,6 +189,7 @@ const AddDriver = () => {
                 onChange={handleChange}
                 placeholder="First Name"
                 required
+                disabled={isSubmitting}
               />
             </div>
             <div className="form-group name-group">
@@ -186,6 +202,7 @@ const AddDriver = () => {
                 onChange={handleChange}
                 placeholder="Last Name"
                 required
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -199,18 +216,20 @@ const AddDriver = () => {
               value={formData.phoneNumber}
               onChange={handleChange}
               placeholder="Phone Number"
+              disabled={isSubmitting}
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="productId">Product ID</label>
             <input
-              type="text"
+              type="number"
               id="productId"
               name="productId"
               value={formData.productId}
               onChange={handleChange}
               placeholder="Product ID"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -227,6 +246,7 @@ const AddDriver = () => {
                     value={contact.firstName}
                     onChange={(e) => handleEmergencyChange(index, e)}
                     placeholder="First Name"
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="form-group name-group">
@@ -237,6 +257,7 @@ const AddDriver = () => {
                     value={contact.lastName}
                     onChange={(e) => handleEmergencyChange(index, e)}
                     placeholder="Last Name"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -248,6 +269,7 @@ const AddDriver = () => {
                   value={contact.phoneNumber}
                   onChange={(e) => handleEmergencyChange(index, e)}
                   placeholder="Phone Number"
+                  disabled={isSubmitting}
                 />
               </div>
               {emergencyContacts.length > 1 && (
@@ -256,6 +278,7 @@ const AddDriver = () => {
                   className="remove-btn"
                   onClick={() => handleRemoveEmergencyContact(index)}
                   aria-label="Remove contact"
+                  disabled={isSubmitting}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -285,13 +308,14 @@ const AddDriver = () => {
             type="button"
             className="save-changes-btn edit-driver-save-btn"
             onClick={handleAddEmergencyContact}
+            disabled={isSubmitting}
           >
             + Add Another
           </button>
         </div>
 
-        <button type="submit" className="save-changes-btn edit-driver-save-btn">
-          Add Driver
+        <button type="submit" className="save-changes-btn edit-driver-save-btn" disabled={isSubmitting}>
+          {isSubmitting ? "Adding Driver..." : "Add Driver"}
         </button>
       </form>
     </div>

@@ -16,14 +16,15 @@ EVENT_COLLECTION = "events"
 
 db_handler = Database(PROJECT_ID, credentials_path=CREDENTIALS_FILE)
 
-def create_new_driver(driver_id, name, phone_number, emergency_contacts=None, events=None, time_stamp="", date="", heart_rate=0, blood_oxygen_level=0, vehicle_speed=0, video_link=""):
+def create_new_driver(driver_id, name, phone_number, profile_pic="", product_id=0, emergency_contacts=None, events=None, time_stamp="", date="", heart_rate=0, blood_oxygen_level=0, vehicle_speed=0, video_link=""):
     """
     Creates a new driver in the database with all driver fields.
     Uses the arguments to make a driver object, map it to dictionary,
     and use the db handler to set/create that driver.
     """
     try:
-        driver = Driver(name, phone_number)
+        # Create driver with profile_pic and product_id
+        driver = Driver(name, phone_number, profile_pic, product_id)
         
         driver.set_time_stamp(time_stamp)
         driver.set_date(date)
@@ -122,6 +123,25 @@ def get_driver_by_id(driver_id):
     except Exception as e:
         raise Exception(f"Failed to retrieve driver: {str(e)}")
 
+def get_all_drivers():
+    """
+    Retrieves all drivers from the database.
+    """
+    try:
+        all_drivers = db_handler._db.collection(DRIVER_COLLECTION).stream()
+        
+        drivers_list = []
+        for doc in all_drivers:
+            driver_data = doc.to_dict()
+            # Ensure driverId is included (use document ID if not in data)
+            if 'driverId' not in driver_data:
+                driver_data['driverId'] = doc.id
+            drivers_list.append(driver_data)
+        
+        return drivers_list
+    except Exception as e:
+        raise Exception(f"Failed to retrieve drivers: {str(e)}")
+
 def add_emergency_contact_to_driver(driver_id, contact_name, contact_phone):
     """
     Adds an emergency contact to a driver.
@@ -179,6 +199,23 @@ def add_event_to_driver(driver_id, event_id, status, time_stamp, date, video_lin
         raise Exception(f"Failed to add event: {str(e)}")
 
 # REST API Endpoints
+@app.route('/drivers', methods=['GET'])
+def get_all_drivers_endpoint():
+    """
+    Retrieves all drivers from the database.
+    """
+    try:
+        drivers_list = get_all_drivers()
+        
+        return jsonify({
+            'message': 'Drivers retrieved successfully',
+            'drivers': drivers_list,
+            'count': len(drivers_list)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/drivers', methods=['POST'])
 def create_driver():
     """
@@ -187,6 +224,8 @@ def create_driver():
         "driverId": "string",
         "name": "string", 
         "phoneNumber": "string",
+        "profilePic": "string",
+        "productId": 0,
         "emergencyContacts": [{"name": "string", "phone_number": "string"}],
         "events": [{"eventId": "string", "status": "string", "timeStamp": "string", "date": "string", "videoLink": "string", "heartRate": 0, "bloodOxygenLevel": 0, "vehicleSpeed": 0}],
         "timeStamp": "string",
@@ -209,6 +248,8 @@ def create_driver():
             data['driverId'],
             data['name'],
             data['phoneNumber'],
+            data.get('profilePic', ''),
+            data.get('productId', 0),
             data.get('emergencyContacts'),
             data.get('events'),
             data.get('timeStamp', ''),

@@ -15,7 +15,6 @@ function ForgotPassword() {
 
     try {
       // Request reset token from backend
-      console.log("Requesting reset token for:", email);
       const resetResponse = await fetch('http://localhost:5000/auth/request-reset', {
         method: 'POST',
         headers: {
@@ -25,19 +24,16 @@ function ForgotPassword() {
       });
 
       const resetData = await resetResponse.json();
-      console.log("Reset response:", resetData);
 
       if (!resetResponse.ok) {
         throw new Error(resetData.error || 'Email not found');
       }
 
       // Generate reset link with token
-      const resetLink = `${window.location.origin}/reset-password?token=${resetData.token}`;
-      console.log("Reset link:", resetLink);
+      const resetLink = `${window.location.origin}/resetpassword?token=${resetData.token}`;
 
       // Send email with reset link
-      console.log("Sending email via EmailJS...");
-      const emailResponse = await emailjs.send(
+      await emailjs.send(
         "service_njinhl9",
         "template_n9gqlzn",
         { 
@@ -48,20 +44,15 @@ function ForgotPassword() {
         "W1Nw1OI7HAbLg7rgS"
       );
 
-      console.log("EmailJS response:", emailResponse);
-      console.log("Password reset email sent successfully");
       alert("A password reset link has been sent to your email.");
       setEmail("");
       navigate("/");
 
     } catch (err) {
-      console.error("Full error object:", err);
-      console.error("Error message:", err.message);
-      
       if (err.message === 'Email not found') {
         setError("No account found with this email address.");
       } else if (err.text) {
-        setError(`EmailJS Error: ${err.text}`);
+        setError(`Email service error: ${err.text}`);
       } else {
         setError(`Failed to send password reset email: ${err.message || 'Please try again.'}`);
       }

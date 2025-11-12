@@ -98,6 +98,10 @@ const ManageAccount = () => {
         throw new Error("No user ID found");
       }
 
+      if (formData.password && formData.password.trim() !== "" && formData.password.length < 6) {
+        throw new Error("Password must be at least 6 characters long");
+      } 
+
       // Combine first and last name
       const fullName = `${formData.firstName} ${formData.lastName}`;
 
@@ -112,6 +116,10 @@ const ManageAccount = () => {
       }
       if (formData.phoneNumber) {
         fieldsToUpdate.push({ fieldToChange: 'phoneNumber', newValue: formData.phoneNumber });
+      }
+
+      if (formData.password && formData.password.trim() !== "") {
+        fieldsToUpdate.push({ fieldToChange: 'password', newValue: formData.password });
       }
 
       // Send update requests for each field

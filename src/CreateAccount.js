@@ -55,6 +55,10 @@ const CreateAccount = () => {
         return;
       }
 
+      if (formData.password.length < 6) {
+        throw new Error("Password must be at least 6 characters long");
+      }
+
       // Combine first and last name
       const fullName = `${formData.firstName} ${formData.lastName}`;
 
