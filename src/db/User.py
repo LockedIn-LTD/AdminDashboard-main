@@ -48,10 +48,9 @@ class User:
 
 class EmergencyContact:
     """Represents an emergency contact."""
-    def __init__(self, name: str, phone_number: str, relationship: str):
+    def __init__(self, name: str, phone_number: str):
         self._name = name
         self._phone_number = phone_number
-        self._relationship = relationship
 
     # Getters
     def get_name(self) -> str:
@@ -60,23 +59,16 @@ class EmergencyContact:
     def get_phone_number(self) -> str:
         return self._phone_number
 
-    def get_relationship(self) -> str:
-        return self._relationship
-
     # Setters
     def set_name(self, n: str):
         self._name = n
 
     def set_phone_number(self, p: str):
         self._phone_number = p
-
-    def set_relationship(self, r: str):
-        self._relationship = r
         
     def to_map(self) -> MapFieldValue:
         """Converts the contact to a dictionary for Firestore storage."""
         return {
             "name": self._name,
             "phone_number": self._phone_number,
-            "relationship": self._relationship
         }

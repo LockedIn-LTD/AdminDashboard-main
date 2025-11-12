@@ -13,6 +13,8 @@ const CreateAccount = () => {
     profilePicture: null,
     previewImage: null,
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,6 +22,8 @@ const CreateAccount = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleImageChange = (e) => {
@@ -33,11 +37,73 @@ const CreateAccount = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  // Generate a unique user ID
+  const generateUserId = (name) => {
+    return `user_${name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Account created:", formData);
-    alert("Account created successfully!");
-    navigate("/dashboard");
+    setError("");
+    setIsLoading(true);
+
+    try {
+      // Validate form fields
+      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phoneNumber || !formData.password) {
+        setError("Please fill in all required fields");
+        setIsLoading(false);
+        return;
+      }
+
+      if (formData.password.length < 6) {
+        throw new Error("Password must be at least 6 characters long");
+      }
+
+      // Combine first and last name
+      const fullName = `${formData.firstName} ${formData.lastName}`;
+
+      // Generate unique user ID
+      const userId = generateUserId(fullName);
+
+      // Prepare payload for API
+      const userPayload = {
+        userId: userId,
+        name: fullName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        password: formData.password
+      };
+
+      // Call the REST API
+      const response = await fetch('http://localhost:5000/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userPayload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create account');
+      }
+
+      console.log("Account created successfully:", data);
+      alert("Account created successfully!");
+      
+      // Store user ID in localStorage for future use
+      localStorage.setItem('currentUserId', userId);
+      
+      // Navigate to dashboard
+      navigate("/dashboard");
+
+    } catch (err) {
+      console.error("Error creating account:", err);
+      setError(err.message || "Failed to create account. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -71,9 +137,15 @@ const CreateAccount = () => {
           </label>
         </div>
 
+        {error && (
+          <div className="error-message" style={{ color: 'red', marginBottom: '15px', padding: '10px', backgroundColor: '#ffe6e6', borderRadius: '4px' }}>
+            {error}
+          </div>
+        )}
+
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="firstName">First Name</label>
+            <label htmlFor="firstName">First Name *</label>
             <input
               type="text"
               id="firstName"
@@ -81,11 +153,13 @@ const CreateAccount = () => {
               value={formData.firstName}
               onChange={handleChange}
               placeholder="First Name"
+              required
+              disabled={isLoading}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="lastName">Last Name</label>
+            <label htmlFor="lastName">Last Name *</label>
             <input
               type="text"
               id="lastName"
@@ -93,12 +167,14 @@ const CreateAccount = () => {
               value={formData.lastName}
               onChange={handleChange}
               placeholder="Last Name"
+              required
+              disabled={isLoading}
             />
           </div>
         </div>
 
         <div className="form-group full-width">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">Email *</label>
           <input
             type="email"
             id="email"
@@ -106,11 +182,13 @@ const CreateAccount = () => {
             value={formData.email}
             onChange={handleChange}
             placeholder="Email Address"
+            required
+            disabled={isLoading}
           />
         </div>
 
         <div className="form-group full-width">
-          <label htmlFor="phoneNumber">Phone Number</label>
+          <label htmlFor="phoneNumber">Phone Number *</label>
           <input
             type="tel"
             id="phoneNumber"
@@ -118,11 +196,13 @@ const CreateAccount = () => {
             value={formData.phoneNumber}
             onChange={handleChange}
             placeholder="Phone Number"
+            required
+            disabled={isLoading}
           />
         </div>
 
         <div className="form-group full-width">
-          <label htmlFor="password">Password</label>
+          <label htmlFor="password">Password *</label>
           <input
             type="password"
             id="password"
@@ -130,15 +210,21 @@ const CreateAccount = () => {
             value={formData.password}
             onChange={handleChange}
             placeholder="Password"
+            required
+            disabled={isLoading}
           />
         </div>
 
-        <p className="create-account-signin-link" onClick={() => navigate("/")}>
+        <p className="create-account-signin-link" onClick={() => !isLoading && navigate("/")}>
           Already have an account? <span className="create-account-signin-text">Sign in</span>
         </p>
 
-        <button type="submit" className="save-changes-btn">
-          Create Account
+        <button 
+          type="submit" 
+          className="save-changes-btn"
+          disabled={isLoading}
+        >
+          {isLoading ? "Creating Account..." : "Create Account"}
         </button>
 
       </form>

@@ -12,7 +12,7 @@ const mockEventsData = {
       breathingRate: "54 BPM",
       vehicleSpeed: "140 Km/h",
       videoUrl: "/videos/testvideo.mp4",
-      hasClip: true
+      hasClip: true,
     },
     {
       id: 2,
@@ -21,7 +21,7 @@ const mockEventsData = {
       heartRate: "99 BPM",
       breathingRate: "54 BPM",
       vehicleSpeed: "140 Km/h",
-      hasClip: false
+      hasClip: false,
     },
     {
       id: 3,
@@ -30,7 +30,7 @@ const mockEventsData = {
       heartRate: "70 BPM",
       breathingRate: "42 BPM",
       vehicleSpeed: "30 Km/h",
-      hasClip: false
+      hasClip: false,
     },
     {
       id: 4,
@@ -39,9 +39,9 @@ const mockEventsData = {
       heartRate: "120 BPM",
       breathingRate: "60 BPM",
       vehicleSpeed: "90 Km/h",
-      hasClip: true
-    }
-  ]
+      hasClip: true,
+    },
+  ],
 };
 
 const EventLog = () => {
@@ -56,13 +56,14 @@ const EventLog = () => {
     breathingRate: 42,
     breathingRateStatus: "High",
     speed: 30,
-    speedStatus: "Mild"
+    speedStatus: "Mild",
   });
 
   const defaultProfilePic = `${process.env.PUBLIC_URL}/images/profile.png`;
-  const profilePic = (location.state?.profilePic && location.state.profilePic.trim() !== '') 
-    ? location.state.profilePic 
-    : defaultProfilePic;
+  const profilePic =
+    location.state?.profilePic && location.state.profilePic.trim() !== ""
+      ? location.state.profilePic
+      : defaultProfilePic;
 
   useEffect(() => {
     const driverEvents = mockEventsData[driverName] || [];
@@ -72,15 +73,15 @@ const EventLog = () => {
   useEffect(() => {
     const getStatus = (value, type) => {
       switch (type) {
-        case 'heartRate':
+        case "heartRate":
           if (value < 80) return "Good";
           if (value < 100) return "Mild";
           return "High";
-        case 'breathingRate':
+        case "breathingRate":
           if (value < 40) return "Good";
           if (value < 50) return "Mild";
           return "High";
-        case 'speed':
+        case "speed":
           if (value < 60) return "Good";
           if (value < 80) return "Mild";
           return "High";
@@ -91,37 +92,44 @@ const EventLog = () => {
 
     const updateStats = () => {
       setCurrentStats((prevStats) => {
-        const newHeartRate = parseFloat(Math.max(
-          60,
-          Math.min(
-            120,
-            prevStats.heartRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 5
-          )
-        ).toFixed(0));
-        
-        const newBreathingRate = parseFloat(Math.max(
-          30,
-          Math.min(
+        const newHeartRate = parseFloat(
+          Math.max(
             60,
-            prevStats.breathingRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 3
-          )
-        ).toFixed(0));
-        
-        const newSpeed = parseFloat(Math.max(
-          20,
-          Math.min(
-            100,
-            prevStats.speed + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 10
-          )
-        ).toFixed(0));
+            Math.min(
+              120,
+              prevStats.heartRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 5
+            )
+          ).toFixed(0)
+        );
+
+        const newBreathingRate = parseFloat(
+          Math.max(
+            30,
+            Math.min(
+              60,
+              prevStats.breathingRate +
+                (Math.random() > 0.5 ? 1 : -1) * Math.random() * 3
+            )
+          ).toFixed(0)
+        );
+
+        const newSpeed = parseFloat(
+          Math.max(
+            20,
+            Math.min(
+              100,
+              prevStats.speed + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 10
+            )
+          ).toFixed(0)
+        );
 
         return {
           heartRate: newHeartRate,
-          heartRateStatus: getStatus(newHeartRate, 'heartRate'),
+          heartRateStatus: getStatus(newHeartRate, "heartRate"),
           breathingRate: newBreathingRate,
-          breathingRateStatus: getStatus(newBreathingRate, 'breathingRate'),
+          breathingRateStatus: getStatus(newBreathingRate, "breathingRate"),
           speed: newSpeed,
-          speedStatus: getStatus(newSpeed, 'speed')
+          speedStatus: getStatus(newSpeed, "speed"),
         };
       });
     };
@@ -140,7 +148,7 @@ const EventLog = () => {
       date: new Date().toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
-        year: "numeric",  
+        year: "numeric",
       }),
       severity: "Mild",
       heartRate: "80 BPM",
@@ -154,6 +162,23 @@ const EventLog = () => {
   const downloadEventReport = (event) => {
     const reportContent = `
 EVENT REPORT
+Driver: ${driverName}
+Date: ${event.date}
+Severity: ${event.severity}
+Heart Rate: ${event.heartRate}
+Breathing Rate: ${event.breathingRate}
+Vehicle Speed: ${event.vehicleSpeed}
+`;
+
+    const blob = new Blob([reportContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Event_${event.id}_Report.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="main-content">
       <div className="event-log-container">
@@ -180,7 +205,9 @@ EVENT REPORT
               <div className="metric-card">
                 <h3>Heart Rate</h3>
                 <p className="metric-value">{currentStats.heartRate} BPM</p>
-                <div className={`status-badge ${currentStats.heartRateStatus.toLowerCase()}`}>
+                <div
+                  className={`status-badge ${currentStats.heartRateStatus.toLowerCase()}`}
+                >
                   {currentStats.heartRateStatus}
                 </div>
               </div>
@@ -188,7 +215,9 @@ EVENT REPORT
               <div className="metric-card">
                 <h3>Breathing Rate</h3>
                 <p className="metric-value">{currentStats.breathingRate} BrPM</p>
-                <div className={`status-badge ${currentStats.breathingRateStatus.toLowerCase()}`}>
+                <div
+                  className={`status-badge ${currentStats.breathingRateStatus.toLowerCase()}`}
+                >
                   {currentStats.breathingRateStatus}
                 </div>
               </div>
@@ -196,7 +225,9 @@ EVENT REPORT
               <div className="metric-card">
                 <h3>Vehicle Speed</h3>
                 <p className="metric-value">{currentStats.speed} km/h</p>
-                <div className={`status-badge ${currentStats.speedStatus.toLowerCase()}`}>
+                <div
+                  className={`status-badge ${currentStats.speedStatus.toLowerCase()}`}
+                >
                   {currentStats.speedStatus}
                 </div>
               </div>
@@ -209,18 +240,20 @@ EVENT REPORT
               Add Event
             </button>
             {events.length > 0 ? (
-              events.map(event => (
+              events.map((event) => (
                 <div key={event.id} className="event-accordion">
-                  <div 
+                  <div
                     className="event-header"
                     onClick={() => toggleEvent(event.id)}
                   >
-                    <h3>Event {event.id}: {event.date}</h3>
+                    <h3>
+                      Event {event.id}: {event.date}
+                    </h3>
                     <span className="toggle-icon">
-                      {expandedEvent === event.id ? '−' : '+'}
+                      {expandedEvent === event.id ? "−" : "+"}
                     </span>
                   </div>
-                  
+
                   {expandedEvent === event.id && (
                     <div className="event-details">
                       <div className="detail-row">
@@ -247,8 +280,8 @@ EVENT REPORT
                           </video>
                         </div>
                       )}
-                      <button 
-                        className="download-report-button" 
+                      <button
+                        className="download-report-button"
                         onClick={() => downloadEventReport(event)}
                       >
                         Download Event Report

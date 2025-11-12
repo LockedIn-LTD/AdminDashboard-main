@@ -6,11 +6,12 @@ import Popup from "./Components/Popup";
 
 const initialDrivers = [
   { 
+    driverId: "driver_david_brown_1",
     name: "David Brown", 
     status: "Severe", 
     driving: "Yes", 
     color: "red", 
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
@@ -19,11 +20,12 @@ const initialDrivers = [
     emergencyPhoneNumber: ""
   },
   { 
+    driverId: "driver_joe_smith_1",
     name: "Joe Smith", 
     status: "LockedIn", 
     driving: "Yes", 
     color: "green", 
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
@@ -32,11 +34,12 @@ const initialDrivers = [
     emergencyPhoneNumber: ""
   },
   { 
+    driverId: "driver_joe_rogan_1",
     name: "Joe Rogan", 
     status: "Unstable", 
     driving: "Yes", 
     color: "yellow", 
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
@@ -45,11 +48,12 @@ const initialDrivers = [
     emergencyPhoneNumber: ""
   },
   { 
+    driverId: "driver_john_adams_1",
     name: "John Adams", 
     status: "Idle", 
     driving: "No", 
     color: "gray", 
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
@@ -58,11 +62,12 @@ const initialDrivers = [
     emergencyPhoneNumber: ""
   },
   { 
+    driverId: "driver_alice_wills_1",
     name: "Alice Wills", 
     status: "Unstable", 
     driving: "No", 
     color: "gray", 
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
     phoneNumber: "",
     productId: "",
@@ -76,44 +81,120 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [drivers, setDrivers] = useState(() => {
-    const savedDrivers = localStorage.getItem('drivers');
-    return savedDrivers ? JSON.parse(savedDrivers) : initialDrivers;
-  });
-
+  const [drivers, setDrivers] = useState([]);
   const [sortOption, setSortOption] = useState("None");
   const [searchQuery, setSearchQuery] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [removedDriverName, setRemovedDriverName] = useState("");
+  const [isLoadingDrivers, setIsLoadingDrivers] = useState(true);
   
   // Popup state management
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [driverToDelete, setDriverToDelete] = useState(null);
 
+  // Fetch drivers from API on component mount
   useEffect(() => {
-    localStorage.setItem('drivers', JSON.stringify(drivers));
-  }, [drivers]);
+    const fetchDrivers = async () => {
+      try {
+        setIsLoadingDrivers(true);
+        console.log('Fetching drivers from API...');
+        
+        const response = await fetch('http://localhost:5001/drivers');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch drivers');
+        }
+        
+        const data = await response.json();
+        console.log('Fetched drivers from API:', data);
+        
+        if (data.drivers && data.drivers.length > 0) {
+          // Ensure each driver has a driverId field
+          const driversWithIds = data.drivers.map(driver => {
+            // If driver doesn't have driverId, try to extract it from the document
+            if (!driver.driverId && driver.name) {
+              // Generate a driverId if it doesn't exist
+              console.warn('Driver missing driverId, generating one:', driver.name);
+              return {
+                ...driver,
+                driverId: `driver_${driver.name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`
+              };
+            }
+            return driver;
+          });
+          
+          // Update state with API data
+          setDrivers(driversWithIds);
+          // Sync to localStorage
+          localStorage.setItem('drivers', JSON.stringify(driversWithIds));
+          console.log('Loaded', driversWithIds.length, 'drivers from Firebase');
+        } else {
+          // If no drivers in API, check localStorage first
+          const savedDrivers = localStorage.getItem('drivers');
+          if (savedDrivers) {
+            console.log('No drivers in database, using localStorage');
+            setDrivers(JSON.parse(savedDrivers));
+          } else {
+            console.log('No drivers found, using initial drivers');
+            setDrivers(initialDrivers);
+            localStorage.setItem('drivers', JSON.stringify(initialDrivers));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching drivers:', error);
+        // If API fails, use localStorage/initialDrivers as fallback
+        const savedDrivers = localStorage.getItem('drivers');
+        if (savedDrivers) {
+          console.log('API failed, using localStorage fallback');
+          setDrivers(JSON.parse(savedDrivers));
+        } else {
+          console.log('API failed, using initial drivers fallback');
+          setDrivers(initialDrivers);
+        }
+      } finally {
+        setIsLoadingDrivers(false);
+      }
+    };
 
+    fetchDrivers();
+  }, []); // Run once on mount
+
+  // Sync drivers to localStorage whenever they change (but not during initial load)
+  useEffect(() => {
+    if (!isLoadingDrivers && drivers.length > 0) {
+      localStorage.setItem('drivers', JSON.stringify(drivers));
+    }
+  }, [drivers, isLoadingDrivers]);
+
+  // Handle location state updates (from add/edit driver pages)
   useEffect(() => {
     if (location.state?.updatedDriver) {
       setDrivers(prevDrivers => {
         return prevDrivers.map(driver => 
+          driver.driverId === location.state.updatedDriver.driverId ||
           driver.name === location.state.originalName ||
           driver.name === location.state.updatedDriver.name
             ? { ...driver, ...location.state.updatedDriver }
             : driver
         );
       });
+      // Clear the location state to prevent re-triggering
+      window.history.replaceState({}, document.title);
     }
     
     if (location.state?.newDriver) {
       setDrivers(prevDrivers => {
         const newDriver = location.state.newDriver;
         const exists = prevDrivers.some(driver => 
-          driver.name.toLowerCase() === newDriver.name.toLowerCase()
+          driver.driverId === newDriver.driverId
         );
-        return exists ? prevDrivers : [...prevDrivers, newDriver];
+        if (!exists) {
+          return [...prevDrivers, newDriver];
+        }
+        return prevDrivers;
       });
+      // Clear the location state to prevent re-triggering
+      window.history.replaceState({}, document.title);
     }
   }, [location.state]);
 
@@ -150,15 +231,35 @@ const Dashboard = () => {
     setIsPopupOpen(false);
   };
 
-  const confirmDelete = () => {
-    setDrivers(drivers.filter(driver => driver.name !== driverToDelete.name));
-    setRemovedDriverName(driverToDelete.name);
-    setShowToast(true);
-    closeDeletePopup();
+  const confirmDelete = async () => {
+    try {
+      const response = await fetch(`http://localhost:5001/drivers/${driverToDelete.driverId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete driver');
+      }
+
+      // Only update local state if API call was successful
+      setDrivers(drivers.filter(driver => driver.driverId !== driverToDelete.driverId));
+      setRemovedDriverName(driverToDelete.name);
+      setShowToast(true);
+      closeDeletePopup();
+      
+      console.log('Driver deleted successfully:', driverToDelete.driverId);
+    } catch (error) {
+      console.error('Error deleting driver:', error);
+      alert(`Failed to delete driver: ${error.message}`);
+      closeDeletePopup();
+    }
   };
 
-  const handleRemoveDriver = (index) => {
-    const driver = filteredDrivers[index];
+  const handleRemoveDriver = (driver) => {
     openDeletePopup(driver);
   };
 
@@ -166,23 +267,23 @@ const Dashboard = () => {
     navigate('/edit-driver', { 
       state: { 
         driver: {
-          ...driver,
-          phoneNumber: driver.phoneNumber || "",
+          driverId: driver.driverId, // IMPORTANT: Include driverId
+          name: driver.name,
+          profilePic: driver.profilePic,
+          phoneNumber: driver.phone_number || driver.phoneNumber || "",
           productId: driver.productId || "",
-          emergencyFirstName: driver.emergencyFirstName || "",
-          emergencyLastName: driver.emergencyLastName || "",
-          emergencyPhoneNumber: driver.emergencyPhoneNumber || ""
+          emergencyContacts: driver.emergency_contacts || driver.emergencyContacts || []
         }
       } 
     });
   };
 
   const filteredDrivers = drivers
-    .filter(driver => driver.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(driver => driver.name && driver.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       switch(sortOption) {
         case "Name":
-          return a.name.localeCompare(b.name);
+          return (a.name || "").localeCompare(b.name || "");
         case "Status":
           const statusOrder = { 
             "Severe": 3,
@@ -190,13 +291,13 @@ const Dashboard = () => {
             "LockedIn": 1,
             "Idle": 0
           };
-          return statusOrder[b.status] - statusOrder[a.status] || a.name.localeCompare(b.name);
+          return (statusOrder[b.status] || 0) - (statusOrder[a.status] || 0) || (a.name || "").localeCompare(b.name || "");
         case "Activity":
-          return b.driving.localeCompare(a.driving) || a.name.localeCompare(b.name);
+          return (b.driving || "").localeCompare(a.driving || "") || (a.name || "").localeCompare(b.name || "");
         case "Newest":
-          return new Date(b.createdAt) - new Date(a.createdAt);
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
         case "Oldest":
-          return new Date(a.createdAt) - new Date(b.createdAt);
+          return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
         case "None":
         default:
           return 0;
@@ -268,40 +369,59 @@ const Dashboard = () => {
         </select>
       </div>
 
-      <div className="drivers-grid">
-        {filteredDrivers.map((driver, index) => (
-          <div 
-            key={`${driver.name}-${index}`} 
-            className={`driver-card ${driver.color}`}
-            onClick={() => navigate(`/event-log/${driver.name}`, {
-              state: {
-                profilePic: driver.profilePic
-              }
-            })}
-          >
-            <img
-              src={driver.profilePic}
-              alt="Profile picture"
-              className="profile"
-              onError={(e) => {
-                e.target.onerror = null; 
-                e.target.src = `${process.env.PUBLIC_URL}/images/profile.png`;
-              }}
-            />
-            <h3>{driver.name}</h3>
-            <p>Status: {driver.status}</p>
-            <p>Driving: {driver.driving}</p>
-            <div className="card-buttons" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => handleEditDriver(driver)}>
-                Edit Driver
-              </button>
-              <button onClick={() => handleRemoveDriver(index)}>
-                Remove Driver
-              </button>
+      {isLoadingDrivers ? (
+        <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#666' }}>
+          Loading drivers from database...
+        </div>
+      ) : (
+        <div className="drivers-grid">
+          {filteredDrivers.length > 0 ? (
+            filteredDrivers.map((driver) => (
+              <div 
+                key={driver.driverId} 
+                className={`driver-card ${driver.color || 'gray'}`}
+                onClick={() => navigate(`/event-log/${driver.name}`, {
+                  state: {
+                    driverId: driver.driverId,
+                    profilePic: driver.profilePic
+                  }
+                })}
+              >
+                <img
+                  src={driver.profilePic || `${process.env.PUBLIC_URL}/images/profile.png`}
+                  alt="Profile picture"
+                  className="profile"
+                  onError={(e) => {
+                    e.target.onerror = null; 
+                    e.target.src = `${process.env.PUBLIC_URL}/images/profile.png`;
+                  }}
+                />
+                <h3>{driver.name}</h3>
+                <p>Status: {driver.status || 'Unknown'}</p>
+                <p>Driving: {driver.driving || 'No'}</p>
+                <div className="card-buttons" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => handleEditDriver(driver)}>
+                    Edit Driver
+                  </button>
+                  <button onClick={() => handleRemoveDriver(driver)}>
+                    Remove Driver
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ 
+              gridColumn: '1 / -1', 
+              textAlign: 'center', 
+              padding: '40px', 
+              fontSize: '18px', 
+              color: '#666' 
+            }}>
+              {searchQuery ? 'No drivers match your search.' : 'No drivers found. Click "Add Driver" to get started!'}
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Toast notification for driver removal */}
       {showToast && (

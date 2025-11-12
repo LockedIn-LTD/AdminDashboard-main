@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./StyleSheets/index.css";
 
@@ -13,6 +13,59 @@ const ManageAccount = () => {
     profilePicture: null,
     previewImage: null,
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [error, setError] = useState("");
+  const [userId, setUserId] = useState("");
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Get userId from localStorage (stored during login/create account)
+        const storedUserId = localStorage.getItem('currentUserId');
+        
+        if (!storedUserId) {
+          setError("No user logged in. Please log in first.");
+          setIsFetching(false);
+          return;
+        }
+
+        setUserId(storedUserId);
+
+        // Fetch user data from API
+        const response = await fetch(`http://localhost:5000/users/${storedUserId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch user data');
+        }
+
+        // Split name back into firstName and lastName
+        const nameParts = data.user.name.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        setFormData({
+          firstName: firstName,
+          lastName: lastName,
+          email: data.user.email,
+          phoneNumber: data.user.phoneNumber,
+          password: "",
+          profilePicture: null,
+          previewImage: null,
+        });
+
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        setError(err.message || "Failed to load user data");
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,6 +73,8 @@ const ManageAccount = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleImageChange = (e) => {
@@ -33,12 +88,77 @@ const ManageAccount = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    alert("Changes saved successfully!");
-    navigate("/dashboard"); 
+    setError("");
+    setIsLoading(true);
+
+    try {
+      if (!userId) {
+        throw new Error("No user ID found");
+      }
+
+      if (formData.password && formData.password.trim() !== "" && formData.password.length < 6) {
+        throw new Error("Password must be at least 6 characters long");
+      } 
+
+      // Combine first and last name
+      const fullName = `${formData.firstName} ${formData.lastName}`;
+
+      // Update each field that has changed
+      const fieldsToUpdate = [];
+      
+      if (fullName.trim()) {
+        fieldsToUpdate.push({ fieldToChange: 'name', newValue: fullName });
+      }
+      if (formData.email) {
+        fieldsToUpdate.push({ fieldToChange: 'email', newValue: formData.email });
+      }
+      if (formData.phoneNumber) {
+        fieldsToUpdate.push({ fieldToChange: 'phoneNumber', newValue: formData.phoneNumber });
+      }
+
+      if (formData.password && formData.password.trim() !== "") {
+        fieldsToUpdate.push({ fieldToChange: 'password', newValue: formData.password });
+      }
+
+      // Send update requests for each field
+      for (const field of fieldsToUpdate) {
+        const response = await fetch(`http://localhost:5000/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(field)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `Failed to update ${field.fieldToChange}`);
+        }
+      }
+
+      console.log("Account updated successfully");
+      alert("Changes saved successfully!");
+      navigate("/dashboard");
+
+    } catch (err) {
+      console.error("Error updating account:", err);
+      setError(err.message || "Failed to save changes. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isFetching) {
+    return (
+      <div className="manage-account-container">
+        <h1>Edit Account</h1>
+        <p style={{ textAlign: 'center', padding: '20px' }}>Loading user data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="manage-account-container">
@@ -71,6 +191,12 @@ const ManageAccount = () => {
           </label>
         </div>
 
+        {error && (
+          <div className="error-message" style={{ color: 'red', marginBottom: '15px', padding: '10px', backgroundColor: '#ffe6e6', borderRadius: '4px' }}>
+            {error}
+          </div>
+        )}
+
         <div className="form-row">
           <div className="form-group">
             <label htmlFor="firstName">First Name</label>
@@ -81,6 +207,7 @@ const ManageAccount = () => {
               value={formData.firstName}
               onChange={handleChange}
               placeholder="First Name"
+              disabled={isLoading}
             />
           </div>
 
@@ -93,6 +220,7 @@ const ManageAccount = () => {
               value={formData.lastName}
               onChange={handleChange}
               placeholder="Last Name"
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -106,6 +234,7 @@ const ManageAccount = () => {
             value={formData.email}
             onChange={handleChange}
             placeholder="Email Address"
+            disabled={isLoading}
           />
         </div>
 
@@ -118,6 +247,7 @@ const ManageAccount = () => {
             value={formData.phoneNumber}
             onChange={handleChange}
             placeholder="Phone Number"
+            disabled={isLoading}
           />
         </div>
 
@@ -129,12 +259,17 @@ const ManageAccount = () => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            placeholder="Password"
+            placeholder="Leave blank to keep current password"
+            disabled={isLoading}
           />
         </div>
 
-        <button type="submit" className="save-changes-btn">
-          Save Changes
+        <button 
+          type="submit" 
+          className="save-changes-btn"
+          disabled={isLoading}
+        >
+          {isLoading ? "Saving Changes..." : "Save Changes"}
         </button>
       </form>
     </div>

@@ -52,6 +52,22 @@ body {
   color: #3D9970;
 }
 
+.link-button {
+  background: none;
+  border: none;
+  font: inherit;
+  color: #333;
+  font-weight: bold;
+  margin: 0 20px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+  color: #3D9970;
+}
+
 /* Main Content */
 .main-content {
   font-family: "Poppins", Arial, sans-serif;
@@ -631,25 +647,6 @@ body {
   box-sizing: border-box;
 }
 
-.forgot-password-button {
-  width: 100%;
-  padding: 12px 20px;
-  background-color: #4a6bff;
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-family: "Poppins", Arial, sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.forgot-password-button:hover {
-  background-color: #3a56d4;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
 /* Sign In Button */
 .login-button {
   font-family: "Poppins", Arial, sans-serif;
@@ -1106,4 +1103,16 @@ body {
 .create-account-signin-link:hover {
   font-weight: 700; 
   text-decoration: underline;
+}
+
+
+.add-event-test-button {
+  display: inline-block;
+  background-color: #007bff;
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 10px;
 }
