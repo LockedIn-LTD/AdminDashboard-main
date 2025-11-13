@@ -279,30 +279,41 @@ const Dashboard = () => {
   };
 
   const filteredDrivers = drivers
-    .filter(driver => driver.name && driver.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .sort((a, b) => {
-      switch(sortOption) {
-        case "Name":
-          return (a.name || "").localeCompare(b.name || "");
-        case "Status":
-          const statusOrder = { 
-            "Severe": 3,
-            "Unstable": 2,
-            "LockedIn": 1,
-            "Idle": 0
-          };
-          return (statusOrder[b.status] || 0) - (statusOrder[a.status] || 0) || (a.name || "").localeCompare(b.name || "");
-        case "Activity":
-          return (b.driving || "").localeCompare(a.driving || "") || (a.name || "").localeCompare(b.name || "");
-        case "Newest":
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        case "Oldest":
-          return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
-        case "None":
-        default:
-          return 0;
-      }
-    });
+  .filter(driver => driver.name && driver.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  .sort((a, b) => {
+    switch(sortOption) {
+      case "Name":
+        return (a.name || "").localeCompare(b.name || "");
+      case "Status":
+        const statusOrder = { 
+          "Severe": 3,
+          "Unstable": 2,
+          "LockedIn": 1,
+          "Idle": 0
+        };
+        // Handle both property naming conventions
+        const statusA = a.status || a.driver_status || "Idle";
+        const statusB = b.status || b.driver_status || "Idle";
+        return (statusOrder[statusB] || 0) - (statusOrder[statusA] || 0) || (a.name || "").localeCompare(b.name || "");
+      case "Activity":
+        // Handle both property naming conventions
+        const drivingA = a.driving || a.is_driving || "No";
+        const drivingB = b.driving || b.is_driving || "No";
+        return (drivingB || "").localeCompare(drivingA || "") || (a.name || "").localeCompare(b.name || "");
+      case "Newest":
+        // Use timeStamp (ISO string) for proper datetime sorting
+        const dateA = new Date(a.timeStamp || a.createdAt || 0);
+        const dateB = new Date(b.timeStamp || b.createdAt || 0);
+        return dateB - dateA;
+      case "Oldest":
+        const dateOldestA = new Date(a.timeStamp || a.createdAt || 0);
+        const dateOldestB = new Date(b.timeStamp || b.createdAt || 0);
+        return dateOldestA - dateOldestB;
+      case "None":
+      default:
+        return 0;
+    }
+  });
 
   return (
     <div className="main-content">

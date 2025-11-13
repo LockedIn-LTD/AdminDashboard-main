@@ -94,6 +94,8 @@ const AddDriver = () => {
         phone_number: contact.phoneNumber
       }));
 
+    const currentDate = new Date();
+
     // Prepare API payload with profilePic and productId
     const apiPayload = {
       driverId: driverId,
@@ -103,8 +105,8 @@ const AddDriver = () => {
       productId: parseInt(formData.productId) || 0,
       emergencyContacts: formattedEmergencyContacts,
       events: [],
-      timeStamp: "",
-      date: "",
+      timeStamp: currentDate.toISOString(),
+      date: currentDate.toLocaleDateString(),
       heartRate: 0,
       bloodOxygenLevel: 0,
       vehicleSpeed: 0,

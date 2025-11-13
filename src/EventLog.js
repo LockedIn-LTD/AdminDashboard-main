@@ -2,46 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import "./StyleSheets/index.css";
 
-const mockEventsData = {
-  "Joe Smith": [
-    {
-      id: 1,
-      date: "January 29th, 2025",
-      severity: "Mild",
-      heartRate: "128 BPM",
-      breathingRate: "54 BPM",
-      vehicleSpeed: "140 Km/h",
-      videoUrl: "/videos/testvideo.mp4",
-      hasClip: true,
-    },
-    {
-      id: 2,
-      date: "January 30th, 2025",
-      severity: "High",
-      heartRate: "99 BPM",
-      breathingRate: "54 BPM",
-      vehicleSpeed: "140 Km/h",
-      hasClip: false,
-    },
-    {
-      id: 3,
-      date: "January 31st, 2025",
-      severity: "Mild",
-      heartRate: "70 BPM",
-      breathingRate: "42 BPM",
-      vehicleSpeed: "30 Km/h",
-      hasClip: false,
-    },
-    {
-      id: 4,
-      date: "February 1st, 2025",
-      severity: "Severe",
-      heartRate: "120 BPM",
-      breathingRate: "60 BPM",
-      vehicleSpeed: "90 Km/h",
-      hasClip: true,
-    },
-  ],
+// Helper function to generate unique event IDs
+const generateEventId = (driverName) => {
+  return `event_${driverName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
 };
 
 const EventLog = () => {
@@ -50,38 +13,82 @@ const EventLog = () => {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [expandedEvent, setExpandedEvent] = useState(null);
+  const [driverId, setDriverId] = useState(null);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [currentStats, setCurrentStats] = useState({
     heartRate: 70,
     heartRateStatus: "Good",
     breathingRate: 42,
     breathingRateStatus: "High",
     speed: 30,
-    speedStatus: "Mild",
+    speedStatus: "Mild"
   });
 
   const defaultProfilePic = `${process.env.PUBLIC_URL}/images/profile.png`;
-  const profilePic =
-    location.state?.profilePic && location.state.profilePic.trim() !== ""
-      ? location.state.profilePic
-      : defaultProfilePic;
+  const profilePic = (location.state?.profilePic && location.state.profilePic.trim() !== '') 
+    ? location.state.profilePic 
+    : defaultProfilePic;
 
+  // Get driverId from location state or generate from driverName
   useEffect(() => {
-    const driverEvents = mockEventsData[driverName] || [];
-    setEvents(driverEvents);
-  }, [driverName]);
+    if (location.state?.driverId) {
+      setDriverId(location.state.driverId);
+    } else {
+      // Generate driverId if not passed (fallback)
+      const generatedId = `driver_${driverName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
+      setDriverId(generatedId);
+      console.warn('No driverId provided, generated:', generatedId);
+    }
+  }, [driverName, location.state]);
+
+  // Fetch events from API when driverId is available
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (!driverId) return;
+
+      try {
+        setIsLoadingEvents(true);
+        const response = await fetch(`http://localhost:5002/drivers/${driverId}/events`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch events');
+        }
+
+        const data = await response.json();
+        console.log('Fetched events:', data);
+        
+        // Transform events to include UI-friendly fields
+        const transformedEvents = data.events.map(event => ({
+          ...event,
+          breathingRate: event.breathingRate || currentStats.breathingRate,
+          hasClip: !!event.videoLink
+        }));
+        
+        setEvents(transformedEvents);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        // If fetch fails, show empty array
+        setEvents([]);
+      } finally {
+        setIsLoadingEvents(false);
+      }
+    };
+
+    fetchEvents();
+  }, [driverId]);
 
   useEffect(() => {
     const getStatus = (value, type) => {
       switch (type) {
-        case "heartRate":
+        case 'heartRate':
           if (value < 80) return "Good";
           if (value < 100) return "Mild";
           return "High";
-        case "breathingRate":
+        case 'breathingRate':
           if (value < 40) return "Good";
           if (value < 50) return "Mild";
           return "High";
-        case "speed":
+        case 'speed':
           if (value < 60) return "Good";
           if (value < 80) return "Mild";
           return "High";
@@ -92,44 +99,37 @@ const EventLog = () => {
 
     const updateStats = () => {
       setCurrentStats((prevStats) => {
-        const newHeartRate = parseFloat(
-          Math.max(
+        const newHeartRate = parseFloat(Math.max(
+          60,
+          Math.min(
+            120,
+            prevStats.heartRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 5
+          )
+        ).toFixed(0));
+        
+        const newBreathingRate = parseFloat(Math.max(
+          30,
+          Math.min(
             60,
-            Math.min(
-              120,
-              prevStats.heartRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 5
-            )
-          ).toFixed(0)
-        );
-
-        const newBreathingRate = parseFloat(
-          Math.max(
-            30,
-            Math.min(
-              60,
-              prevStats.breathingRate +
-                (Math.random() > 0.5 ? 1 : -1) * Math.random() * 3
-            )
-          ).toFixed(0)
-        );
-
-        const newSpeed = parseFloat(
-          Math.max(
-            20,
-            Math.min(
-              100,
-              prevStats.speed + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 10
-            )
-          ).toFixed(0)
-        );
+            prevStats.breathingRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 3
+          )
+        ).toFixed(0));
+        
+        const newSpeed = parseFloat(Math.max(
+          20,
+          Math.min(
+            100,
+            prevStats.speed + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 10
+          )
+        ).toFixed(0));
 
         return {
           heartRate: newHeartRate,
-          heartRateStatus: getStatus(newHeartRate, "heartRate"),
+          heartRateStatus: getStatus(newHeartRate, 'heartRate'),
           breathingRate: newBreathingRate,
-          breathingRateStatus: getStatus(newBreathingRate, "breathingRate"),
+          breathingRateStatus: getStatus(newBreathingRate, 'breathingRate'),
           speed: newSpeed,
-          speedStatus: getStatus(newSpeed, "speed"),
+          speedStatus: getStatus(newSpeed, 'speed')
         };
       });
     };
@@ -142,41 +142,129 @@ const EventLog = () => {
     setExpandedEvent(expandedEvent === eventId ? null : eventId);
   };
 
-  const addEvent = () => {
-    const newEvent = {
-      id: events.length + 1,
-      date: new Date().toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      }),
-      severity: "Mild",
-      heartRate: "80 BPM",
-      breathingRate: "50 BrPM",
-      vehicleSpeed: "60 Km/h",
-      hasClip: true,
+  const addEvent = async () => {
+    if (!driverId) {
+      alert('Driver ID not available. Please navigate from the dashboard.');
+      return;
+    }
+
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",  
+    });
+    
+    const eventId = generateEventId(driverName);
+    const timeStamp = currentDate.toLocaleTimeString("en-US", {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+    const newEventData = {
+      eventId: eventId,
+      driverId: driverId, // Now including driverId
+      status: "Mild",
+      timeStamp: timeStamp,
+      date: formattedDate,
+      videoLink: "",
+      heartRate: currentStats.heartRate,
+      vehicleSpeed: currentStats.speed
     };
-    setEvents([...events, newEvent]);
+
+    try {
+      const response = await fetch('http://localhost:5002/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newEventData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create event');
+      }
+
+      const result = await response.json();
+      console.log('Event created successfully:', result);
+
+      // Add to local state with UI-friendly structure
+      const newEvent = {
+        ...newEventData,
+        breathingRate: currentStats.breathingRate,
+        hasClip: false
+      };
+
+      setEvents([...events, newEvent]);
+    } catch (error) {
+      console.error('Error creating event:', error);
+      alert(`Failed to create event: ${error.message}`);
+    }
+  };
+
+  const deleteEvent = async (eventId) => {
+    try {
+      const response = await fetch(`http://localhost:5002/events/${eventId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete event');
+      }
+
+      console.log('Event deleted successfully');
+      
+      // Update local state
+      setEvents(events.filter(event => event.eventId !== eventId));
+      
+      // Close expanded view if it was open
+      if (expandedEvent === eventId) {
+        setExpandedEvent(null);
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert(`Failed to delete event: ${error.message}`);
+    }
   };
 
   const downloadEventReport = (event) => {
     const reportContent = `
 EVENT REPORT
-Driver: ${driverName}
-Date: ${event.date}
-Severity: ${event.severity}
-Heart Rate: ${event.heartRate}
-Breathing Rate: ${event.breathingRate}
-Vehicle Speed: ${event.vehicleSpeed}
-`;
+============================================
 
-    const blob = new Blob([reportContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Event_${event.id}_Report.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+Driver: ${driverName}
+Driver ID: ${driverId}
+Event ID: ${event.eventId}
+Date: ${event.date}
+Time: ${event.timeStamp || 'N/A'}
+
+EVENT DETAILS
+============================================
+Severity: ${event.status}
+Heart Rate: ${event.heartRate} BPM
+Breathing Rate: ${event.breathingRate || 'N/A'} BrPM
+Vehicle Speed: ${event.vehicleSpeed} Km/h
+Video Clip Available: ${event.hasClip || event.videoLink ? 'Yes' : 'No'}
+
+============================================
+Report Generated: ${new Date().toLocaleString()}
+    `.trim();
+
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${driverName}_Event_${event.eventId}_${event.date.replace(/\s/g, '_')}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -205,9 +293,7 @@ Vehicle Speed: ${event.vehicleSpeed}
               <div className="metric-card">
                 <h3>Heart Rate</h3>
                 <p className="metric-value">{currentStats.heartRate} BPM</p>
-                <div
-                  className={`status-badge ${currentStats.heartRateStatus.toLowerCase()}`}
-                >
+                <div className={`status-badge ${currentStats.heartRateStatus.toLowerCase()}`}>
                   {currentStats.heartRateStatus}
                 </div>
               </div>
@@ -215,9 +301,7 @@ Vehicle Speed: ${event.vehicleSpeed}
               <div className="metric-card">
                 <h3>Breathing Rate</h3>
                 <p className="metric-value">{currentStats.breathingRate} BrPM</p>
-                <div
-                  className={`status-badge ${currentStats.breathingRateStatus.toLowerCase()}`}
-                >
+                <div className={`status-badge ${currentStats.breathingRateStatus.toLowerCase()}`}>
                   {currentStats.breathingRateStatus}
                 </div>
               </div>
@@ -225,9 +309,7 @@ Vehicle Speed: ${event.vehicleSpeed}
               <div className="metric-card">
                 <h3>Vehicle Speed</h3>
                 <p className="metric-value">{currentStats.speed} km/h</p>
-                <div
-                  className={`status-badge ${currentStats.speedStatus.toLowerCase()}`}
-                >
+                <div className={`status-badge ${currentStats.speedStatus.toLowerCase()}`}>
                   {currentStats.speedStatus}
                 </div>
               </div>
@@ -239,53 +321,69 @@ Vehicle Speed: ${event.vehicleSpeed}
             <button className="add-event-test-button" onClick={addEvent}>
               Add Event
             </button>
-            {events.length > 0 ? (
-              events.map((event) => (
-                <div key={event.id} className="event-accordion">
-                  <div
+            
+            {isLoadingEvents ? (
+              <p>Loading events...</p>
+            ) : events.length > 0 ? (
+              events.map(event => (
+                <div key={event.eventId} className="event-accordion">
+                  <div 
                     className="event-header"
-                    onClick={() => toggleEvent(event.id)}
+                    onClick={() => toggleEvent(event.eventId)}
                   >
-                    <h3>
-                      Event {event.id}: {event.date}
-                    </h3>
+                    <h3>Event: {event.date}</h3>
                     <span className="toggle-icon">
-                      {expandedEvent === event.id ? "−" : "+"}
+                      {expandedEvent === event.eventId ? '−' : '+'}
                     </span>
                   </div>
-
-                  {expandedEvent === event.id && (
+                  
+                  {expandedEvent === event.eventId && (
                     <div className="event-details">
                       <div className="detail-row">
                         <span>Severity:</span>
-                        <span>{event.severity}</span>
+                        <span>{event.status}</span>
                       </div>
                       <div className="detail-row">
                         <span>Heart Rate:</span>
-                        <span>{event.heartRate}</span>
+                        <span>{event.heartRate} BPM</span>
                       </div>
-                      <div className="detail-row">
-                        <span>Breathing Rate:</span>
-                        <span>{event.breathingRate}</span>
-                      </div>
+                      {event.breathingRate && (
+                        <div className="detail-row">
+                          <span>Breathing Rate:</span>
+                          <span>{event.breathingRate} BrPM</span>
+                        </div>
+                      )}
                       <div className="detail-row">
                         <span>Vehicle Speed:</span>
-                        <span>{event.vehicleSpeed}</span>
+                        <span>{event.vehicleSpeed} Km/h</span>
                       </div>
-                      {event.hasClip && (
+                      <div className="detail-row">
+                        <span>Time:</span>
+                        <span>{event.timeStamp || 'N/A'}</span>
+                      </div>
+                      {(event.hasClip || event.videoLink) && (
                         <div className="video-container">
                           <video controls width="100%">
-                            <source src={event.videoUrl} type="video/mp4" />
+                            <source src={event.videoLink} type="video/mp4" />
                             Your browser does not support the video tag.
                           </video>
                         </div>
                       )}
-                      <button
-                        className="download-report-button"
-                        onClick={() => downloadEventReport(event)}
-                      >
-                        Download Event Report
-                      </button>
+                      <div className="event-actions">
+                        <button 
+                          className="download-report-button" 
+                          onClick={() => downloadEventReport(event)}
+                        >
+                          Download Event Report
+                        </button>
+                        <button 
+                          className="delete-event-button" 
+                          onClick={() => deleteEvent(event.eventId)}
+                          style={{ marginLeft: '10px', backgroundColor: '#dc3545' }}
+                        >
+                          Delete Event
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
