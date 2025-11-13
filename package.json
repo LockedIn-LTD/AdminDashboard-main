@@ -14,7 +14,11 @@
     "web-vitals": "^4.2.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "concurrently --kill-others-on-fail -n \"react,event,user,driver\" -c \"blue,green,magenta,cyan\" \"npm:react-start\" \"npm:python-event_rest\" \"npm:python-user_rest\" \"npm:python-driver_rest\"",
+    "react-start": "react-scripts start",
+    "python-event_rest": "python src/db/Event_rest.py",
+    "python-user_rest": "python src/db/User_rest.py",
+    "python-driver_rest": "python src/db/Driver_rest.py",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -36,5 +40,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

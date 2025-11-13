@@ -7,7 +7,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 PROJECT_ID = "drivesense-c1d4c" 
-CREDENTIALS_FILE = r"C:\Users\Kevin\Documents\Cookies-n-cream\src\db\database_key.json"
+CREDENTIALS_FILE = "src/db/database_key.json"
 
 def test_user_functions():
     """Test all the wrapper functions from user_rest.py"""

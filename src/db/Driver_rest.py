@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app)
 
 PROJECT_ID = "drivesense-c1d4c"
-CREDENTIALS_FILE = r"C:\Users\Kevin\Documents\Cookies-n-cream\src\db\database_key.json"
+CREDENTIALS_FILE = "src/db/database_key.json"
 DRIVER_COLLECTION = "drivers"
 EVENT_COLLECTION = "events"
 
