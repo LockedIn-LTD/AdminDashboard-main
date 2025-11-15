@@ -299,7 +299,9 @@ const Dashboard = () => {
         // Handle both property naming conventions
         const drivingA = a.driving || a.is_driving || "No";
         const drivingB = b.driving || b.is_driving || "No";
-        return (drivingB || "").localeCompare(drivingA || "") || (a.name || "").localeCompare(b.name || "");
+        const drivingAStr = String(drivingA);
+        const drivingBStr = String(drivingB);
+        return (drivingBStr).localeCompare(drivingAStr) || String(a.name || "").localeCompare(String(b.name || ""));
       case "Newest":
         // Use timeStamp (ISO string) for proper datetime sorting
         const dateA = new Date(a.timeStamp || a.createdAt || 0);
