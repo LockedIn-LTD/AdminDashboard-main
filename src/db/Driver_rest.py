@@ -16,7 +16,7 @@ EVENT_COLLECTION = "events"
 
 db_handler = Database(PROJECT_ID, credentials_path=CREDENTIALS_FILE)
 
-def create_new_driver(driver_id, name, phone_number, profile_pic="", product_id=0, emergency_contacts=None, events=None, time_stamp="", date="", heart_rate=0, blood_oxygen_level=0, vehicle_speed=0, video_link=""):
+def create_new_driver(driver_id, name, phone_number, profile_pic="", product_id=0, emergency_contacts=None, events=None, time_stamp="", date="", heart_rate=0, blood_oxygen_level=0, vehicle_speed=0, video_link="", driving=False, status="Idle"):
     """
     Creates a new driver in the database with all driver fields.
     Uses the arguments to make a driver object, map it to dictionary,
@@ -32,6 +32,8 @@ def create_new_driver(driver_id, name, phone_number, profile_pic="", product_id=
         driver.set_blood_oxygen_level(blood_oxygen_level)
         driver.set_vehicle_speed(vehicle_speed)
         driver.set_video_link(video_link)
+        driver.set_driving(driving)
+        driver.set_status(status)
         
         if emergency_contacts:
             for contact_data in emergency_contacts:
@@ -233,7 +235,9 @@ def create_driver():
         "heartRate": 0,
         "bloodOxygenLevel": 0,
         "vehicleSpeed": 0,
-        "videoLink": "string"
+        "videoLink": "string",
+        "driving": false,
+        "status": "Idle"
     }
     """
     try:
@@ -243,6 +247,11 @@ def create_driver():
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Validate status if provided
+        valid_statuses = ["Unstable", "Severe", "LockedIn", "Idle"]
+        if 'status' in data and data['status'] not in valid_statuses:
+            return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
         
         driver_data = create_new_driver(
             data['driverId'],
@@ -257,7 +266,9 @@ def create_driver():
             data.get('heartRate', 0),
             data.get('bloodOxygenLevel', 0),
             data.get('vehicleSpeed', 0),
-            data.get('videoLink', '')
+            data.get('videoLink', ''),
+            data.get('driving', False),
+            data.get('status', 'Idle')
         )
         
         return jsonify({
@@ -285,6 +296,12 @@ def update_driver(driver_id):
         
         if 'fieldToChange' not in data or 'newValue' not in data:
             return jsonify({'error': 'Missing required fields: fieldToChange and newValue'}), 400
+        
+        # Validate status if updating status field
+        if data['fieldToChange'] == 'status':
+            valid_statuses = ["Unstable", "Severe", "LockedIn", "Idle"]
+            if data['newValue'] not in valid_statuses:
+                return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
         
         update_fields = edit_driver_field(
             data['fieldToChange'],
