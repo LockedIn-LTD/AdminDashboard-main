@@ -9,7 +9,7 @@ const initialDrivers = [
     driverId: "driver_david_brown_1",
     name: "David Brown", 
     status: "Severe", 
-    driving: "Yes", 
+    driving: true, 
     color: "red", 
     createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
@@ -23,7 +23,7 @@ const initialDrivers = [
     driverId: "driver_joe_smith_1",
     name: "Joe Smith", 
     status: "LockedIn", 
-    driving: "Yes", 
+    driving: true, 
     color: "green", 
     createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
@@ -37,7 +37,7 @@ const initialDrivers = [
     driverId: "driver_joe_rogan_1",
     name: "Joe Rogan", 
     status: "Unstable", 
-    driving: "Yes", 
+    driving: true, 
     color: "yellow", 
     createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
@@ -51,7 +51,7 @@ const initialDrivers = [
     driverId: "driver_john_adams_1",
     name: "John Adams", 
     status: "Idle", 
-    driving: "No", 
+    driving: false, 
     color: "gray", 
     createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
@@ -65,7 +65,7 @@ const initialDrivers = [
     driverId: "driver_alice_wills_1",
     name: "Alice Wills", 
     status: "Unstable", 
-    driving: "No", 
+    driving: false, 
     color: "gray", 
     createdAt: new Date().toISOString(),
     profilePic: `${process.env.PUBLIC_URL}/images/profile.png`,
@@ -92,12 +92,13 @@ const Dashboard = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [driverToDelete, setDriverToDelete] = useState(null);
 
-  // Fetch drivers from API on component mount
+  // Fetch drivers from API on component mount and poll for updates
   useEffect(() => {
-    const fetchDrivers = async () => {
+    const fetchDrivers = async (isInitialLoad = false) => {
       try {
-        setIsLoadingDrivers(true);
-        console.log('Fetching drivers from API...');
+        if (isInitialLoad) {
+          setIsLoadingDrivers(true);
+        }
         
         const response = await fetch('http://localhost:5001/drivers');
         
@@ -106,7 +107,6 @@ const Dashboard = () => {
         }
         
         const data = await response.json();
-        console.log('Fetched drivers from API:', data);
         
         if (data.drivers && data.drivers.length > 0) {
           // Ensure each driver has a driverId field
@@ -123,13 +123,15 @@ const Dashboard = () => {
             return driver;
           });
           
-          // Update state with API data
+          // Always update state with fresh data from API
           setDrivers(driversWithIds);
-          // Sync to localStorage
           localStorage.setItem('drivers', JSON.stringify(driversWithIds));
-          console.log('Loaded', driversWithIds.length, 'drivers from Firebase');
-        } else {
-          // If no drivers in API, check localStorage first
+          
+          if (isInitialLoad) {
+            console.log('Loaded', driversWithIds.length, 'drivers from Firebase');
+          }
+        } else if (isInitialLoad) {
+          // If no drivers in API, check localStorage first (only on initial load)
           const savedDrivers = localStorage.getItem('drivers');
           if (savedDrivers) {
             console.log('No drivers in database, using localStorage');
@@ -142,29 +144,38 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error('Error fetching drivers:', error);
-        // If API fails, use localStorage/initialDrivers as fallback
-        const savedDrivers = localStorage.getItem('drivers');
-        if (savedDrivers) {
-          console.log('API failed, using localStorage fallback');
-          setDrivers(JSON.parse(savedDrivers));
-        } else {
-          console.log('API failed, using initial drivers fallback');
-          setDrivers(initialDrivers);
+        // If API fails on initial load, use localStorage/initialDrivers as fallback
+        if (isInitialLoad) {
+          const savedDrivers = localStorage.getItem('drivers');
+          if (savedDrivers) {
+            console.log('API failed, using localStorage fallback');
+            setDrivers(JSON.parse(savedDrivers));
+          } else {
+            console.log('API failed, using initial drivers fallback');
+            setDrivers(initialDrivers);
+          }
         }
       } finally {
-        setIsLoadingDrivers(false);
+        if (isInitialLoad) {
+          setIsLoadingDrivers(false);
+        }
       }
     };
 
-    fetchDrivers();
+    // Initial fetch
+    fetchDrivers(true);
+    
+    // Set up polling interval (every 3 seconds)
+    const pollInterval = setInterval(() => {
+      fetchDrivers(false);
+    }, 3000); // Poll every 3 seconds
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(pollInterval);
   }, []); // Run once on mount
 
-  // Sync drivers to localStorage whenever they change (but not during initial load)
-  useEffect(() => {
-    if (!isLoadingDrivers && drivers.length > 0) {
-      localStorage.setItem('drivers', JSON.stringify(drivers));
-    }
-  }, [drivers, isLoadingDrivers]);
+  // Remove the localStorage sync effect since we're now syncing in fetchDrivers
+  // This prevents conflicts with the polling updates
 
   // Handle location state updates (from add/edit driver pages)
   useEffect(() => {
@@ -285,23 +296,28 @@ const Dashboard = () => {
       case "Name":
         return (a.name || "").localeCompare(b.name || "");
       case "Status":
+        // Status priority: Severe (3) > Unstable (2) > LockedIn (1) > Idle (0)
         const statusOrder = { 
           "Severe": 3,
           "Unstable": 2,
           "LockedIn": 1,
           "Idle": 0
         };
-        // Handle both property naming conventions
-        const statusA = a.status || a.driver_status || "Idle";
-        const statusB = b.status || b.driver_status || "Idle";
-        return (statusOrder[statusB] || 0) - (statusOrder[statusA] || 0) || (a.name || "").localeCompare(b.name || "");
+        const statusA = a.status || "Idle";
+        const statusB = b.status || "Idle";
+        const orderDiff = (statusOrder[statusB] || 0) - (statusOrder[statusA] || 0);
+        // If same status, sort by name
+        return orderDiff !== 0 ? orderDiff : (a.name || "").localeCompare(b.name || "");
       case "Activity":
-        // Handle both property naming conventions
-        const drivingA = a.driving || a.is_driving || "No";
-        const drivingB = b.driving || b.is_driving || "No";
-        const drivingAStr = String(drivingA);
-        const drivingBStr = String(drivingB);
-        return (drivingBStr).localeCompare(drivingAStr) || String(a.name || "").localeCompare(String(b.name || ""));
+        // Convert to boolean for proper comparison (true at top, false at bottom)
+        const drivingA = a.driving === true || a.driving === "Yes";
+        const drivingB = b.driving === true || b.driving === "Yes";
+        // If drivingB is true and drivingA is false, return positive (B comes first)
+        // If drivingA is true and drivingB is false, return negative (A comes first)
+        if (drivingB && !drivingA) return 1;
+        if (drivingA && !drivingB) return -1;
+        // If same driving status, sort by name
+        return (a.name || "").localeCompare(b.name || "");
       case "Newest":
         // Use timeStamp (ISO string) for proper datetime sorting
         const dateA = new Date(a.timeStamp || a.createdAt || 0);
@@ -389,10 +405,26 @@ const Dashboard = () => {
       ) : (
         <div className="drivers-grid">
           {filteredDrivers.length > 0 ? (
-            filteredDrivers.map((driver) => (
+            filteredDrivers.map((driver) => {
+              // Determine card color based on status
+              const getStatusColor = (status) => {
+                switch(status) {
+                  case "Severe":
+                    return "red";
+                  case "Unstable":
+                    return "yellow";
+                  case "LockedIn":
+                    return "green";
+                  case "Idle":
+                  default:
+                    return "gray";
+                }
+              };
+              
+              return (
               <div 
                 key={driver.driverId} 
-                className={`driver-card ${driver.color || 'gray'}`}
+                className={`driver-card ${getStatusColor(driver.status)}`}
                 onClick={() => navigate(`/event-log/${driver.name}`, {
                   state: {
                     driverId: driver.driverId,
@@ -411,7 +443,7 @@ const Dashboard = () => {
                 />
                 <h3>{driver.name}</h3>
                 <p>Status: {driver.status || 'Unknown'}</p>
-                <p>Driving: {driver.driving || 'No'}</p>
+                <p>Driving: {driver.driving === true || driver.driving === "Yes" ? "Yes" : "No"}</p>
                 <div className="card-buttons" onClick={(e) => e.stopPropagation()}>
                   <button onClick={() => handleEditDriver(driver)}>
                     Edit Driver
@@ -421,7 +453,8 @@ const Dashboard = () => {
                   </button>
                 </div>
               </div>
-            ))
+            );
+            })
           ) : (
             <div style={{ 
               gridColumn: '1 / -1', 

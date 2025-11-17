@@ -20,6 +20,10 @@ class Driver:
         self._blood_oxygen_level: int = 0
         self._vehicle_speed: int = 0
         self._video_link: str = ""
+        
+        # New attributes
+        self._driving: bool = False
+        self._status: str = "Idle"  # Options: Unstable, Severe, LockedIn, Idle
 
     # Getters
     def get_name(self) -> str:
@@ -57,6 +61,12 @@ class Driver:
     
     def get_video_link(self) -> str:
         return self._video_link
+    
+    def get_driving(self) -> bool:
+        return self._driving
+    
+    def get_status(self) -> str:
+        return self._status
 
     # Setters
     def set_name(self, n: str):
@@ -94,6 +104,20 @@ class Driver:
         
     def set_video_link(self, vid: str):
         self._video_link = vid
+    
+    def set_driving(self, driving: bool):
+        self._driving = driving
+    
+    def set_status(self, status: str):
+        """
+        Sets the driver's status.
+        Valid options: Unstable, Severe, LockedIn, Idle
+        """
+        valid_statuses = ["Unstable", "Severe", "LockedIn", "Idle"]
+        if status in valid_statuses:
+            self._status = status
+        else:
+            raise ValueError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
 
     def to_map(self) -> Dict[str, Any]:
         """Converts the driver and their lists to a dictionary for Firestore storage."""
@@ -109,5 +133,7 @@ class Driver:
             "heartRate": self._heart_rate,
             "bloodOxygenLevel": self._blood_oxygen_level,
             "vehicleSpeed": self._vehicle_speed,
-            "videoLink": self._video_link
+            "videoLink": self._video_link,
+            "driving": self._driving,
+            "status": self._status
         }

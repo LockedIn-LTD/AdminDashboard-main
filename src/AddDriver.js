@@ -60,13 +60,12 @@ const AddDriver = () => {
         return;
       }
 
-      // Convert image to Base64
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({
           ...prev,
           profilePicture: file,
-          previewImage: reader.result, // Base64 string
+          previewImage: reader.result, 
         }));
       };
       reader.onerror = () => {
@@ -79,14 +78,13 @@ const AddDriver = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting) return; 
     
     setIsSubmitting(true);
     
     const driverName = `${formData.firstName} ${formData.lastName}`.trim();
     const driverId = generateDriverId(driverName);
     
-    // Format emergency contacts for API (only include filled ones)
     const formattedEmergencyContacts = emergencyContacts
       .filter(contact => contact.firstName || contact.lastName || contact.phoneNumber)
       .map(contact => ({
@@ -96,7 +94,6 @@ const AddDriver = () => {
 
     const currentDate = new Date();
 
-    // Prepare API payload with profilePic and productId
     const apiPayload = {
       driverId: driverId,
       name: driverName,
@@ -110,7 +107,9 @@ const AddDriver = () => {
       heartRate: 0,
       bloodOxygenLevel: 0,
       vehicleSpeed: 0,
-      videoLink: ""
+      videoLink: "",
+      driving: false,  // New field: default to false
+      status: "Idle"   // New field: default to "Idle"
     };
 
     console.log('Submitting driver with profile pic length:', apiPayload.profilePic.length);
@@ -134,7 +133,6 @@ const AddDriver = () => {
 
       alert('Driver added successfully!');
 
-      // Navigate back to dashboard (it will fetch fresh data)
       navigate("/dashboard");
     } catch (error) {
       console.error('Error creating driver:', error);
