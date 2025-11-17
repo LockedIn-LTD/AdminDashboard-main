@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
@@ -7,6 +7,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const passwordRef = useRef(null);
 
   const handleSignIn = async () => {
     setError("");
@@ -75,6 +76,12 @@ function Login() {
         className="login-input"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter"){
+            e.preventDefault();
+            passwordRef.current?.focus();
+          }
+        }}
         disabled={isLoading}
       />
 
@@ -84,6 +91,12 @@ function Login() {
         className="login-input"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        ref={passwordRef}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            handleSignIn();
+          }
+        }}
         disabled={isLoading}
       />
 
