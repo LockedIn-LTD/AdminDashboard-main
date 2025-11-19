@@ -82,6 +82,15 @@ const AddDriver = () => {
     
     setIsSubmitting(true);
     
+    const userId = localStorage.getItem('currentUserId');
+    
+    if (!userId) {
+      alert('Error: No user is currently logged in. Please log in first.');
+      setIsSubmitting(false);
+      navigate('/login');
+      return;
+    }
+    
     const driverName = `${formData.firstName} ${formData.lastName}`.trim();
     const driverId = generateDriverId(driverName);
     
@@ -96,6 +105,7 @@ const AddDriver = () => {
 
     const apiPayload = {
       driverId: driverId,
+      userId: userId, 
       name: driverName,
       phoneNumber: formData.phoneNumber,
       profilePic: formData.previewImage || "",
@@ -108,11 +118,11 @@ const AddDriver = () => {
       bloodOxygenLevel: 0,
       vehicleSpeed: 0,
       videoLink: "",
-      driving: false,  // New field: default to false
-      status: "Idle"   // New field: default to "Idle"
+      driving: false,
+      status: "Idle"
     };
 
-    console.log('Submitting driver with profile pic length:', apiPayload.profilePic.length);
+    console.log('Submitting driver for user:', userId);
 
     try {
       const response = await fetch('http://localhost:5001/drivers', {

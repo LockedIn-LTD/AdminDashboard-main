@@ -23,21 +23,39 @@ const EditDriver = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  useEffect(() => {
+    const userId = localStorage.getItem('currentUserId');
+    
+    if (!userId) {
+      alert('Please log in to edit drivers.');
+      navigate('/login');
+      return;
+    }
+    
+    setCurrentUserId(userId);
+  }, [navigate]);
 
   // Fetch driver data from API on component mount
   useEffect(() => {
     const fetchDriverData = async () => {
-      if (!driverData.driverId) {
+      if (!driverData.driverId || !currentUserId) {
+        if (driverData.driverId && !currentUserId) {
+          // Wait for currentUserId to be set
+          return;
+        }
         setError("No driver ID provided");
         setIsLoading(false);
         return;
       }
 
       try {
-        const response = await fetch(`http://localhost:5001/drivers/${driverData.driverId}`);
+        const response = await fetch(`http://localhost:5001/drivers/${driverData.driverId}?userId=${currentUserId}`);
         
         if (!response.ok) {
-          throw new Error('Failed to fetch driver data');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch driver data');
         }
 
         const data = await response.json();
@@ -82,7 +100,7 @@ const EditDriver = () => {
     };
 
     fetchDriverData();
-  }, [driverData.driverId, driverData.profilePic]);
+  }, [driverData.driverId, driverData.profilePic, currentUserId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -136,6 +154,12 @@ const EditDriver = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!currentUserId) {
+      alert('Error: No user is currently logged in.');
+      return;
+    }
+    
     setError("");
     setIsSaving(true);
     
@@ -158,6 +182,7 @@ const EditDriver = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            userId: currentUserId, 
             fieldToChange: 'name',
             newValue: updatedName
           })
@@ -178,6 +203,7 @@ const EditDriver = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            userId: currentUserId, 
             fieldToChange: 'phone_number',
             newValue: formData.phoneNumber
           })
@@ -198,6 +224,7 @@ const EditDriver = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            userId: currentUserId, 
             fieldToChange: 'productId',
             newValue: parseInt(formData.productId) || 0
           })
@@ -219,6 +246,7 @@ const EditDriver = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            userId: currentUserId, 
             fieldToChange: 'profilePic',
             newValue: formData.previewImage || ""
           })
@@ -238,6 +266,7 @@ const EditDriver = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          userId: currentUserId,  
           fieldToChange: 'emergency_contacts',
           newValue: formattedEmergencyContacts
         })
