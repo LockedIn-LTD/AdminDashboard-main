@@ -16,15 +16,14 @@ EVENT_COLLECTION = "events"
 
 db_handler = Database(PROJECT_ID, credentials_path=CREDENTIALS_FILE)
 
-def create_new_driver(driver_id, name, phone_number, profile_pic="", product_id=0, emergency_contacts=None, events=None, time_stamp="", date="", heart_rate=0, blood_oxygen_level=0, vehicle_speed=0, video_link="", driving=False, status="Idle"):
+def create_new_driver(driver_id, name, phone_number, user_id, profile_pic="", product_id=0, emergency_contacts=None, events=None, time_stamp="", date="", heart_rate=0, blood_oxygen_level=0, vehicle_speed=0, video_link="", driving=False, status="Idle"):
     """
     Creates a new driver in the database with all driver fields.
-    Uses the arguments to make a driver object, map it to dictionary,
-    and use the db handler to set/create that driver.
+    NOW REQUIRES user_id to link driver to user.
     """
     try:
-        # Create driver with profile_pic and product_id
-        driver = Driver(name, phone_number, profile_pic, product_id)
+        # Create driver with user_id
+        driver = Driver(name, phone_number, profile_pic, product_id, user_id)
         
         driver.set_time_stamp(time_stamp)
         driver.set_date(date)
@@ -60,6 +59,7 @@ def create_new_driver(driver_id, name, phone_number, profile_pic="", product_id=
                 # Also create event in events collection with driver link
                 event_dict = event.to_map()
                 event_dict['driverId'] = driver_id
+                event_dict['userId'] = user_id 
                 db_handler.set_document(EVENT_COLLECTION, event_data.get('eventId'), event_dict)
         
         driver_data = driver.to_map()
@@ -70,13 +70,19 @@ def create_new_driver(driver_id, name, phone_number, profile_pic="", product_id=
     except Exception as e:
         raise Exception(f"Failed to create driver: {str(e)}")
 
-def edit_driver_field(field_to_change, new_value, driver_id):
+def edit_driver_field(field_to_change, new_value, driver_id, user_id):
     """
     Edits a specific field of a driver.
-    Makes the dictionary with the new field,
-    calls the update function with the new map and value dictionary.
+    NOW VALIDATES that the driver belongs to the user.
     """
     try:
+        existing_driver = db_handler.get_document(DRIVER_COLLECTION, driver_id)
+        if not existing_driver:
+            raise Exception("Driver not found")
+        
+        if existing_driver.get('userId') != user_id:
+            raise Exception("Unauthorized: You don't have permission to edit this driver")
+        
         update_fields = {field_to_change: new_value}        
         db_handler.update_document(DRIVER_COLLECTION, driver_id, update_fields)
         
@@ -84,15 +90,19 @@ def edit_driver_field(field_to_change, new_value, driver_id):
     except Exception as e:
         raise Exception(f"Failed to update driver field: {str(e)}")
 
-def remove_driver(driver_id):
+def remove_driver(driver_id, user_id):
     """
     Removes a driver from the database AND all their associated events.
+    NOW VALIDATES that the driver belongs to the user.
     """
     try:
         existing_driver = db_handler.get_document(DRIVER_COLLECTION, driver_id)
         
         if not existing_driver:
             raise Exception("Driver not found")
+        
+        if existing_driver.get('userId') != user_id:
+            raise Exception("Unauthorized: You don't have permission to delete this driver")
         
         # Delete all events associated with this driver
         events = existing_driver.get('events', [])
@@ -102,7 +112,7 @@ def remove_driver(driver_id):
                 try:
                     db_handler._db.collection(EVENT_COLLECTION).document(event_id).delete()
                 except:
-                    pass  # Continue even if event doesn't exist
+                    pass  
         
         # Delete the driver
         db_handler._db.collection(DRIVER_COLLECTION).document(driver_id).delete()
@@ -111,9 +121,10 @@ def remove_driver(driver_id):
     except Exception as e:
         raise Exception(f"Failed to delete driver: {str(e)}")
 
-def get_driver_by_id(driver_id):
+def get_driver_by_id(driver_id, user_id):
     """
     Retrieves a driver from the database.
+    NOW VALIDATES that the driver belongs to the user.
     """
     try:
         driver_data = db_handler.get_document(DRIVER_COLLECTION, driver_id)
@@ -121,21 +132,27 @@ def get_driver_by_id(driver_id):
         if not driver_data:
             raise Exception("Driver not found")
         
+        if driver_data.get('userId') != user_id:
+            raise Exception("Unauthorized: You don't have permission to view this driver")
+        
         return driver_data
     except Exception as e:
         raise Exception(f"Failed to retrieve driver: {str(e)}")
 
-def get_all_drivers():
+def get_drivers_by_user(user_id):
     """
-    Retrieves all drivers from the database.
+    NEW: Retrieves all drivers belonging to a specific user.
     """
     try:
-        all_drivers = db_handler._db.collection(DRIVER_COLLECTION).stream()
+        # Query Firestore for drivers with matching userId
+        drivers_ref = db_handler._db.collection(DRIVER_COLLECTION)
+        query = drivers_ref.where('userId', '==', user_id)
+        results = query.stream()
         
         drivers_list = []
-        for doc in all_drivers:
+        for doc in results:
             driver_data = doc.to_dict()
-            # Ensure driverId is included (use document ID if not in data)
+         
             if 'driverId' not in driver_data:
                 driver_data['driverId'] = doc.id
             drivers_list.append(driver_data)
@@ -144,12 +161,13 @@ def get_all_drivers():
     except Exception as e:
         raise Exception(f"Failed to retrieve drivers: {str(e)}")
 
-def add_emergency_contact_to_driver(driver_id, contact_name, contact_phone):
+def add_emergency_contact_to_driver(driver_id, user_id, contact_name, contact_phone):
     """
     Adds an emergency contact to a driver.
+    NOW VALIDATES that the driver belongs to the user.
     """
     try:
-        driver_data = get_driver_by_id(driver_id)
+        driver_data = get_driver_by_id(driver_id, user_id)
         
         new_contact = {
             "name": contact_name,
@@ -167,12 +185,13 @@ def add_emergency_contact_to_driver(driver_id, contact_name, contact_phone):
     except Exception as e:
         raise Exception(f"Failed to add emergency contact: {str(e)}")
 
-def add_event_to_driver(driver_id, event_id, status, time_stamp, date, video_link, heart_rate=0, blood_oxygen_level=0, vehicle_speed=0):
+def add_event_to_driver(driver_id, user_id, event_id, status, time_stamp, date, video_link, heart_rate=0, blood_oxygen_level=0, vehicle_speed=0):
     """
     Adds an event to a driver AND creates it in the events collection.
+    NOW VALIDATES that the driver belongs to the user.
     """
     try:
-        driver_data = get_driver_by_id(driver_id)
+        driver_data = get_driver_by_id(driver_id, user_id)
         
         new_event = {
             "eventId": event_id,
@@ -194,6 +213,7 @@ def add_event_to_driver(driver_id, event_id, status, time_stamp, date, video_lin
         # Also create event in events collection
         event_data = new_event.copy()
         event_data['driverId'] = driver_id
+        event_data['userId'] = user_id  
         db_handler.set_document(EVENT_COLLECTION, event_id, event_data)
         
         return new_event
@@ -201,13 +221,15 @@ def add_event_to_driver(driver_id, event_id, status, time_stamp, date, video_lin
         raise Exception(f"Failed to add event: {str(e)}")
 
 # REST API Endpoints
-@app.route('/drivers', methods=['GET'])
-def get_all_drivers_endpoint():
+
+@app.route('/drivers/user/<user_id>', methods=['GET'])
+def get_drivers_by_user_endpoint(user_id):
     """
-    Retrieves all drivers from the database.
+    NEW ENDPOINT: Retrieves all drivers for a specific user.
+    Example: GET /drivers/user/user123
     """
     try:
-        drivers_list = get_all_drivers()
+        drivers_list = get_drivers_by_user(user_id)
         
         return jsonify({
             'message': 'Drivers retrieved successfully',
@@ -222,27 +244,20 @@ def get_all_drivers_endpoint():
 def create_driver():
     """
     Creates a new driver in the database.
+    NOW REQUIRES userId in payload.
     Expected JSON payload: {
         "driverId": "string",
+        "userId": "string",  <- NEW REQUIRED FIELD
         "name": "string", 
         "phoneNumber": "string",
         "profilePic": "string",
         "productId": 0,
-        "emergencyContacts": [{"name": "string", "phone_number": "string"}],
-        "events": [{"eventId": "string", "status": "string", "timeStamp": "string", "date": "string", "videoLink": "string", "heartRate": 0, "bloodOxygenLevel": 0, "vehicleSpeed": 0}],
-        "timeStamp": "string",
-        "date": "string",
-        "heartRate": 0,
-        "bloodOxygenLevel": 0,
-        "vehicleSpeed": 0,
-        "videoLink": "string",
-        "driving": false,
-        "status": "Idle"
+        ...
     }
     """
     try:
         data = request.get_json()        
-        required_fields = ['driverId', 'name', 'phoneNumber']
+        required_fields = ['driverId', 'name', 'phoneNumber', 'userId']
         
         for field in required_fields:
             if field not in data:
@@ -257,6 +272,7 @@ def create_driver():
             data['driverId'],
             data['name'],
             data['phoneNumber'],
+            data['userId'],
             data.get('profilePic', ''),
             data.get('productId', 0),
             data.get('emergencyContacts'),
@@ -283,7 +299,9 @@ def create_driver():
 def update_driver(driver_id):
     """
     Updates specific fields of a driver in the database.
+    NOW REQUIRES userId in payload for authorization.
     Expected JSON payload: {
+        "userId": "string",  <- NEW REQUIRED FIELD
         "fieldToChange": "string",
         "newValue": "string"
     }
@@ -294,8 +312,8 @@ def update_driver(driver_id):
         if not data:
             return jsonify({'error': 'No update data provided'}), 400
         
-        if 'fieldToChange' not in data or 'newValue' not in data:
-            return jsonify({'error': 'Missing required fields: fieldToChange and newValue'}), 400
+        if 'fieldToChange' not in data or 'newValue' not in data or 'userId' not in data:
+            return jsonify({'error': 'Missing required fields: fieldToChange, newValue, and userId'}), 400
         
         # Validate status if updating status field
         if data['fieldToChange'] == 'status':
@@ -306,7 +324,8 @@ def update_driver(driver_id):
         update_fields = edit_driver_field(
             data['fieldToChange'],
             data['newValue'],
-            driver_id
+            driver_id,
+            data['userId'] 
         )
         
         return jsonify({
@@ -321,9 +340,18 @@ def update_driver(driver_id):
 def delete_driver(driver_id):
     """
     Removes a driver from the database and all their events.
+    NOW REQUIRES userId in request body for authorization.
+    Expected JSON payload: {
+        "userId": "string"  <- NEW REQUIRED FIELD
+    }
     """
     try:
-        remove_driver(driver_id)
+        data = request.get_json()
+        
+        if not data or 'userId' not in data:
+            return jsonify({'error': 'Missing required field: userId'}), 400
+        
+        remove_driver(driver_id, data['userId'])
         
         return jsonify({
             'message': 'Driver deleted successfully',
@@ -337,9 +365,16 @@ def delete_driver(driver_id):
 def get_driver(driver_id):
     """
     Retrieves a driver from the database.
+    NOW REQUIRES userId as query parameter for authorization.
+    Example: GET /drivers/driver123?userId=user456
     """
     try:
-        driver_data = get_driver_by_id(driver_id)
+        user_id = request.args.get('userId')
+        
+        if not user_id:
+            return jsonify({'error': 'Missing required query parameter: userId'}), 400
+        
+        driver_data = get_driver_by_id(driver_id, user_id)
         
         return jsonify({
             'message': 'Driver retrieved successfully',
@@ -353,14 +388,16 @@ def get_driver(driver_id):
 def add_emergency_contact(driver_id):
     """
     Adds an emergency contact to a driver.
+    NOW REQUIRES userId in payload for authorization.
     Expected JSON payload: {
+        "userId": "string",  <- NEW REQUIRED FIELD
         "name": "string",
-        "phoneNumber": "string",
+        "phoneNumber": "string"
     }
     """
     try:
         data = request.get_json()        
-        required_fields = ['name', 'phoneNumber']
+        required_fields = ['name', 'phoneNumber', 'userId']
         
         for field in required_fields:
             if field not in data:
@@ -368,6 +405,7 @@ def add_emergency_contact(driver_id):
         
         new_contact = add_emergency_contact_to_driver(
             driver_id,
+            data['userId'],
             data['name'],
             data['phoneNumber'],
         )
@@ -384,27 +422,25 @@ def add_emergency_contact(driver_id):
 def add_event(driver_id):
     """
     Adds an event to a driver and creates it in events collection.
+    NOW REQUIRES userId in payload for authorization.
     Expected JSON payload: {
+        "userId": "string",  <- NEW REQUIRED FIELD
         "eventId": "string",
         "status": "string",
-        "timeStamp": "string",
-        "date": "string",
-        "videoLink": "string",
-        "heartRate": 0,
-        "bloodOxygenLevel": 0,
-        "vehicleSpeed": 0
+        ...
     }
     """
     try:
         data = request.get_json()
         
-        required_fields = ['eventId', 'status', 'timeStamp', 'date', 'videoLink']
+        required_fields = ['eventId', 'status', 'timeStamp', 'date', 'videoLink', 'userId']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
         new_event = add_event_to_driver(
             driver_id,
+            data['userId'], 
             data['eventId'],
             data['status'],
             data['timeStamp'],

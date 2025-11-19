@@ -164,7 +164,7 @@ const EventLog = () => {
 
     const newEventData = {
       eventId: eventId,
-      driverId: driverId, // Now including driverId
+      driverId: driverId,
       status: "Mild",
       timeStamp: timeStamp,
       date: formattedDate,
@@ -190,7 +190,6 @@ const EventLog = () => {
       const result = await response.json();
       console.log('Event created successfully:', result);
 
-      // Add to local state with UI-friendly structure
       const newEvent = {
         ...newEventData,
         breathingRate: currentStats.breathingRate,
@@ -233,13 +232,14 @@ const EventLog = () => {
     }
   };
 
-  const downloadEventReport = (event) => {
+  const downloadEventReport = (event, eventNumber) => {
     const reportContent = `
 EVENT REPORT
 ============================================
 
 Driver: ${driverName}
 Driver ID: ${driverId}
+Event Number: ${eventNumber}
 Event ID: ${event.eventId}
 Date: ${event.date}
 Time: ${event.timeStamp || 'N/A'}
@@ -260,7 +260,7 @@ Report Generated: ${new Date().toLocaleString()}
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${driverName}_Event_${event.eventId}_${event.date.replace(/\s/g, '_')}.txt`;
+    link.download = `${driverName}_Event${eventNumber}_${event.date.replace(/\s/g, '_')}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -325,69 +325,73 @@ Report Generated: ${new Date().toLocaleString()}
             {isLoadingEvents ? (
               <p>Loading events...</p>
             ) : events.length > 0 ? (
-              events.map(event => (
-                <div key={event.eventId} className="event-accordion">
-                  <div 
-                    className="event-header"
-                    onClick={() => toggleEvent(event.eventId)}
-                  >
-                    <h3>Event: {event.date}</h3>
-                    <span className="toggle-icon">
-                      {expandedEvent === event.eventId ? '−' : '+'}
-                    </span>
-                  </div>
-                  
-                  {expandedEvent === event.eventId && (
-                    <div className="event-details">
-                      <div className="detail-row">
-                        <span>Severity:</span>
-                        <span>{event.status}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span>Heart Rate:</span>
-                        <span>{event.heartRate} BPM</span>
-                      </div>
-                      {event.breathingRate && (
-                        <div className="detail-row">
-                          <span>Breathing Rate:</span>
-                          <span>{event.breathingRate} BrPM</span>
-                        </div>
-                      )}
-                      <div className="detail-row">
-                        <span>Vehicle Speed:</span>
-                        <span>{event.vehicleSpeed} Km/h</span>
-                      </div>
-                      <div className="detail-row">
-                        <span>Time:</span>
-                        <span>{event.timeStamp || 'N/A'}</span>
-                      </div>
-                      {(event.hasClip || event.videoLink) && (
-                        <div className="video-container">
-                          <video controls width="100%">
-                            <source src={event.videoLink} type="video/mp4" />
-                            Your browser does not support the video tag.
-                          </video>
-                        </div>
-                      )}
-                      <div className="event-actions">
-                        <button 
-                          className="download-report-button" 
-                          onClick={() => downloadEventReport(event)}
-                        >
-                          Download Event Report
-                        </button>
-                        <button 
-                          className="delete-event-button" 
-                          onClick={() => deleteEvent(event.eventId)}
-                          style={{ marginLeft: '10px', backgroundColor: '#dc3545' }}
-                        >
-                          Delete Event
-                        </button>
-                      </div>
+              events.map((event, index) => {
+                const eventNumber = index + 1;
+                
+                return (
+                  <div key={event.eventId} className="event-accordion">
+                    <div 
+                      className="event-header"
+                      onClick={() => toggleEvent(event.eventId)}
+                    >
+                      <h3>Event {eventNumber}: {event.date}</h3>
+                      <span className="toggle-icon">
+                        {expandedEvent === event.eventId ? '−' : '+'}
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))
+                    
+                    {expandedEvent === event.eventId && (
+                      <div className="event-details">
+                        <div className="detail-row">
+                          <span>Severity:</span>
+                          <span>{event.status}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span>Heart Rate:</span>
+                          <span>{event.heartRate} BPM</span>
+                        </div>
+                        {event.breathingRate && (
+                          <div className="detail-row">
+                            <span>Breathing Rate:</span>
+                            <span>{event.breathingRate} BrPM</span>
+                          </div>
+                        )}
+                        <div className="detail-row">
+                          <span>Vehicle Speed:</span>
+                          <span>{event.vehicleSpeed} Km/h</span>
+                        </div>
+                        <div className="detail-row">
+                          <span>Time:</span>
+                          <span>{event.timeStamp || 'N/A'}</span>
+                        </div>
+                        {(event.hasClip || event.videoLink) && (
+                          <div className="video-container">
+                            <video controls width="100%">
+                              <source src={event.videoLink} type="video/mp4" />
+                              Your browser does not support the video tag.
+                            </video>
+                          </div>
+                        )}
+                        <div className="event-actions">
+                          <button 
+                            className="download-report-button" 
+                            onClick={() => downloadEventReport(event, eventNumber)}
+                          >
+                            Download Event Report
+                          </button>
+                          <button 
+                            className="delete-event-button" 
+                            onClick={() => deleteEvent(event.eventId)}
+                            style={{ marginLeft: '10px', backgroundColor: '#dc3545' }}
+                          >
+                            Delete Event
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
             ) : (
               <p>No events recorded for this driver</p>
             )}

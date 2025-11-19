@@ -5,11 +5,12 @@ from typing import Dict, Any, List
 
 class Driver:
     """Represents a driver, potentially including their safety data."""
-    def __init__(self, name: str, phone_number: str, profile_pic: str = "", product_id: int = 0):
+    def __init__(self, name: str, phone_number: str, profile_pic: str = "", product_id: int = 0, user_id: str = ""):
         self._name = name
         self._phone_number = phone_number
         self._profile_pic = profile_pic
         self._product_id = product_id
+        self._user_id = user_id  
         self._emergency_contacts: List[EmergencyContact] = []
         self._events: List[Event] = []
         
@@ -21,9 +22,8 @@ class Driver:
         self._vehicle_speed: int = 0
         self._video_link: str = ""
         
-        # New attributes
         self._driving: bool = False
-        self._status: str = "Idle"  # Options: Unstable, Severe, LockedIn, Idle
+        self._status: str = "Idle"  #
 
     # Getters
     def get_name(self) -> str:
@@ -37,6 +37,9 @@ class Driver:
     
     def get_product_id(self) -> int:
         return self._product_id
+    
+    def get_user_id(self) -> str:
+        return self._user_id
 
     def get_emergency_contacts(self) -> List[EmergencyContact]:
         return self._emergency_contacts
@@ -80,6 +83,9 @@ class Driver:
     
     def set_product_id(self, pid: int):
         self._product_id = pid
+    
+    def set_user_id(self, uid: str):
+        self._user_id = uid
 
     def add_emergency_contact(self, contact: EmergencyContact):
         self._emergency_contacts.append(contact)
@@ -126,6 +132,7 @@ class Driver:
             "phone_number": self._phone_number,
             "profilePic": self._profile_pic,
             "productId": self._product_id,
+            "userId": self._user_id, 
             "emergency_contacts": [c.to_map() for c in self._emergency_contacts],
             "events": [e.to_map() for e in self._events],
             "timeStamp": self._time_stamp,
