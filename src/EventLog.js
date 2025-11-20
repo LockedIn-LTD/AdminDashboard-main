@@ -7,6 +7,89 @@ const generateEventId = (driverName) => {
   return `event_${driverName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
 };
 
+// Helper function to convert date format
+const formatDate = (dateStr) => {
+  // If already in "Month Day, Year" format, return as is
+  if (dateStr.match(/^[A-Z][a-z]+\s+\d{1,2},\s+\d{4}$/)) {
+    return dateStr;
+  }
+  
+  // Handle YYYY-MM-DD format
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = dateStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+  }
+  
+  // Try parsing as a general date
+  const date = new Date(dateStr);
+  if (!isNaN(date.getTime())) {
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+  }
+  
+  return dateStr; // Return original if can't parse
+};
+
+// Helper function to convert time format
+const formatTime = (timeStr) => {
+  // If already in 12-hour format, return as is
+  if (timeStr.match(/^\d{1,2}:\d{2}\s*(AM|PM)$/i)) {
+    return timeStr;
+  }
+  
+  // Handle HH:MM:SS format (24-hour)
+  if (timeStr.match(/^\d{2}:\d{2}:\d{2}$/)) {
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  }
+  
+  // Try parsing as a general time
+  try {
+    const date = new Date(`1970-01-01T${timeStr}`);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleTimeString("en-US", {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+  } catch (e) {
+    // Continue to return original
+  }
+  
+  return timeStr; // Return original if can't parse
+};
+
+// Helper function to convert Firebase Storage URLs
+const getVideoUrl = (videoLink) => {
+  if (!videoLink) return '';
+  
+  // If it's a gs:// URL, convert to Firebase Storage download URL
+  if (videoLink.startsWith('gs://')) {
+    // Extract bucket and path
+    const gsPattern = /gs:\/\/([^\/]+)\/(.+)/;
+    const match = videoLink.match(gsPattern);
+    if (match) {
+      const bucket = match[1];
+      const path = encodeURIComponent(match[2]);
+      return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${path}?alt=media`;
+    }
+  }
+  
+  // Return as-is if it's already an HTTP(S) URL
+  return videoLink;
+};
+
 const EventLog = () => {
   const { driverName } = useParams();
   const location = useLocation();
@@ -18,8 +101,8 @@ const EventLog = () => {
   const [currentStats, setCurrentStats] = useState({
     heartRate: 70,
     heartRateStatus: "Good",
-    breathingRate: 42,
-    breathingRateStatus: "High",
+    bloodOxygenLevel: 98,
+    bloodOxygenStatus: "Good",
     speed: 30,
     speedStatus: "Mild"
   });
@@ -57,10 +140,13 @@ const EventLog = () => {
         const data = await response.json();
         console.log('Fetched events:', data);
         
-        // Transform events to include UI-friendly fields
+        // Transform events to include UI-friendly fields with formatted dates/times
         const transformedEvents = data.events.map(event => ({
           ...event,
-          breathingRate: event.breathingRate || currentStats.breathingRate,
+          date: formatDate(event.date),
+          timeStamp: formatTime(event.timeStamp),
+          bloodOxygenLevel: event.bloodOxygenLevel || 98,
+          videoUrl: getVideoUrl(event.videoLink),
           hasClip: !!event.videoLink
         }));
         
@@ -84,9 +170,9 @@ const EventLog = () => {
           if (value < 80) return "Good";
           if (value < 100) return "Mild";
           return "High";
-        case 'breathingRate':
-          if (value < 40) return "Good";
-          if (value < 50) return "Mild";
+        case 'bloodOxygenLevel':
+          if (value >= 95) return "Good";
+          if (value >= 90) return "Mild";
           return "High";
         case 'speed':
           if (value < 60) return "Good";
@@ -107,13 +193,13 @@ const EventLog = () => {
           )
         ).toFixed(0));
         
-        const newBreathingRate = parseFloat(Math.max(
-          30,
+        const newBloodOxygenLevel = parseFloat(Math.max(
+          85,
           Math.min(
-            60,
-            prevStats.breathingRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 3
+            100,
+            prevStats.bloodOxygenLevel + (Math.random() > 0.5 ? 0.5 : -0.5) * Math.random()
           )
-        ).toFixed(0));
+        ).toFixed(1));
         
         const newSpeed = parseFloat(Math.max(
           20,
@@ -126,8 +212,8 @@ const EventLog = () => {
         return {
           heartRate: newHeartRate,
           heartRateStatus: getStatus(newHeartRate, 'heartRate'),
-          breathingRate: newBreathingRate,
-          breathingRateStatus: getStatus(newBreathingRate, 'breathingRate'),
+          bloodOxygenLevel: newBloodOxygenLevel,
+          bloodOxygenStatus: getStatus(newBloodOxygenLevel, 'bloodOxygenLevel'),
           speed: newSpeed,
           speedStatus: getStatus(newSpeed, 'speed')
         };
@@ -157,9 +243,9 @@ const EventLog = () => {
     
     const eventId = generateEventId(driverName);
     const timeStamp = currentDate.toLocaleTimeString("en-US", {
-      hour: '2-digit',
+      hour: 'numeric',
       minute: '2-digit',
-      second: '2-digit'
+      hour12: true
     });
 
     const newEventData = {
@@ -170,6 +256,7 @@ const EventLog = () => {
       date: formattedDate,
       videoLink: "",
       heartRate: currentStats.heartRate,
+      bloodOxygenLevel: currentStats.bloodOxygenLevel,
       vehicleSpeed: currentStats.speed
     };
 
@@ -192,7 +279,7 @@ const EventLog = () => {
 
       const newEvent = {
         ...newEventData,
-        breathingRate: currentStats.breathingRate,
+        videoUrl: getVideoUrl(newEventData.videoLink),
         hasClip: false
       };
 
@@ -248,7 +335,7 @@ EVENT DETAILS
 ============================================
 Severity: ${event.status}
 Heart Rate: ${event.heartRate} BPM
-Breathing Rate: ${event.breathingRate || 'N/A'} BrPM
+Blood Oxygen Level: ${event.bloodOxygenLevel}%
 Vehicle Speed: ${event.vehicleSpeed} Km/h
 Video Clip Available: ${event.hasClip || event.videoLink ? 'Yes' : 'No'}
 
@@ -299,10 +386,10 @@ Report Generated: ${new Date().toLocaleString()}
               </div>
 
               <div className="metric-card">
-                <h3>Breathing Rate</h3>
-                <p className="metric-value">{currentStats.breathingRate} BrPM</p>
-                <div className={`status-badge ${currentStats.breathingRateStatus.toLowerCase()}`}>
-                  {currentStats.breathingRateStatus}
+                <h3>Blood Oxygen Level</h3>
+                <p className="metric-value">{currentStats.bloodOxygenLevel}%</p>
+                <div className={`status-badge ${currentStats.bloodOxygenStatus.toLowerCase()}`}>
+                  {currentStats.bloodOxygenStatus}
                 </div>
               </div>
 
@@ -350,12 +437,10 @@ Report Generated: ${new Date().toLocaleString()}
                           <span>Heart Rate:</span>
                           <span>{event.heartRate} BPM</span>
                         </div>
-                        {event.breathingRate && (
-                          <div className="detail-row">
-                            <span>Breathing Rate:</span>
-                            <span>{event.breathingRate} BrPM</span>
-                          </div>
-                        )}
+                        <div className="detail-row">
+                          <span>Blood Oxygen Level:</span>
+                          <span>{event.bloodOxygenLevel}%</span>
+                        </div>
                         <div className="detail-row">
                           <span>Vehicle Speed:</span>
                           <span>{event.vehicleSpeed} Km/h</span>
@@ -364,10 +449,10 @@ Report Generated: ${new Date().toLocaleString()}
                           <span>Time:</span>
                           <span>{event.timeStamp || 'N/A'}</span>
                         </div>
-                        {(event.hasClip || event.videoLink) && (
+                        {(event.hasClip || event.videoLink) && event.videoUrl && (
                           <div className="video-container">
                             <video controls width="100%">
-                              <source src={event.videoLink} type="video/mp4" />
+                              <source src={event.videoUrl} type="video/mp4" />
                               Your browser does not support the video tag.
                             </video>
                           </div>
