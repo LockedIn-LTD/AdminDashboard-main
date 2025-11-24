@@ -54,7 +54,6 @@ const Dashboard = () => {
         const data = await response.json();
         
         if (data.drivers && data.drivers.length > 0) {
-          // Ensure each driver has a driverId field
           const driversWithIds = data.drivers.map(driver => {
             if (!driver.driverId && driver.name) {
               console.warn('Driver missing driverId, generating one:', driver.name);
@@ -89,7 +88,6 @@ const Dashboard = () => {
       }
     };
 
-    // Initial fetch
     fetchDrivers(true);
     
     // Set up polling interval (every 3 seconds)
@@ -97,11 +95,9 @@ const Dashboard = () => {
       fetchDrivers(false);
     }, 3000);
     
-    // Cleanup interval on component unmount
     return () => clearInterval(pollInterval);
-  }, [currentUserId]); // Re-run when currentUserId changes
+  }, [currentUserId]); 
 
-  // Handle location state updates (from add/edit driver pages)
   useEffect(() => {
     if (location.state?.updatedDriver) {
       setDrivers(prevDrivers => {
@@ -227,9 +223,9 @@ const Dashboard = () => {
         return (a.name || "").localeCompare(b.name || "");
       case "Status":
         const statusOrder = { 
-          "Severe": 3,
-          "Unstable": 2,
-          "LockedIn": 1,
+          "Critical": 3,
+          "Mild": 2,
+          "Stable": 1,
           "Idle": 0
         };
         const statusA = a.status || "Idle";
@@ -256,7 +252,6 @@ const Dashboard = () => {
     }
   });
 
-  // Show loading state while checking for user
   if (!currentUserId) {
     return (
       <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#666' }}>
@@ -359,7 +354,8 @@ const Dashboard = () => {
                 onClick={() => navigate(`/event-log/${driver.name}`, {
                   state: {
                     driverId: driver.driverId,
-                    profilePic: driver.profilePic
+                    profilePic: driver.profilePic,
+                    userId: currentUserId 
                   }
                 })}
               >
