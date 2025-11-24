@@ -7,14 +7,11 @@ const generateEventId = (driverName) => {
   return `event_${driverName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
 };
 
-// Helper function to convert date format
 const formatDate = (dateStr) => {
-  // If already in "Month Day, Year" format, return as is
   if (dateStr.match(/^[A-Z][a-z]+\s+\d{1,2},\s+\d{4}$/)) {
     return dateStr;
   }
   
-  // Handle YYYY-MM-DD format
   if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
     const [year, month, day] = dateStr.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -25,7 +22,6 @@ const formatDate = (dateStr) => {
     });
   }
   
-  // Try parsing as a general date
   const date = new Date(dateStr);
   if (!isNaN(date.getTime())) {
     return date.toLocaleDateString("en-US", {
@@ -35,17 +31,14 @@ const formatDate = (dateStr) => {
     });
   }
   
-  return dateStr; // Return original if can't parse
+  return dateStr; 
 };
 
-// Helper function to convert time format
 const formatTime = (timeStr) => {
-  // If already in 12-hour format, return as is
   if (timeStr.match(/^\d{1,2}:\d{2}\s*(AM|PM)$/i)) {
     return timeStr;
   }
   
-  // Handle HH:MM:SS format (24-hour)
   if (timeStr.match(/^\d{2}:\d{2}:\d{2}$/)) {
     const [hours, minutes, seconds] = timeStr.split(':').map(Number);
     const period = hours >= 12 ? 'PM' : 'AM';
@@ -53,7 +46,6 @@ const formatTime = (timeStr) => {
     return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
   }
   
-  // Try parsing as a general time
   try {
     const date = new Date(`1970-01-01T${timeStr}`);
     if (!isNaN(date.getTime())) {
@@ -64,19 +56,15 @@ const formatTime = (timeStr) => {
       });
     }
   } catch (e) {
-    // Continue to return original
   }
   
-  return timeStr; // Return original if can't parse
+  return timeStr; 
 };
 
-// Helper function to convert Firebase Storage URLs
 const getVideoUrl = (videoLink) => {
   if (!videoLink) return '';
   
-  // If it's a gs:// URL, convert to Firebase Storage download URL
   if (videoLink.startsWith('gs://')) {
-    // Extract bucket and path
     const gsPattern = /gs:\/\/([^\/]+)\/(.+)/;
     const match = videoLink.match(gsPattern);
     if (match) {
@@ -86,7 +74,6 @@ const getVideoUrl = (videoLink) => {
     }
   }
   
-  // Return as-is if it's already an HTTP(S) URL
   return videoLink;
 };
 
@@ -97,13 +84,15 @@ const EventLog = () => {
   const [events, setEvents] = useState([]);
   const [expandedEvent, setExpandedEvent] = useState(null);
   const [driverId, setDriverId] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [isLoadingDriver, setIsLoadingDriver] = useState(true);
   const [currentStats, setCurrentStats] = useState({
-    heartRate: 70,
+    heartRate: 0,
     heartRateStatus: "Good",
-    bloodOxygenLevel: 98,
+    bloodOxygenLevel: 0,
     bloodOxygenStatus: "Good",
-    speed: 30,
+    speed: 0,
     speedStatus: "Mild"
   });
 
@@ -112,25 +101,114 @@ const EventLog = () => {
     ? location.state.profilePic 
     : defaultProfilePic;
 
-  // Get driverId from location state or generate from driverName
   useEffect(() => {
     if (location.state?.driverId) {
       setDriverId(location.state.driverId);
     } else {
-      // Generate driverId if not passed (fallback)
       const generatedId = `driver_${driverName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
       setDriverId(generatedId);
       console.warn('No driverId provided, generated:', generatedId);
     }
+
+    if (location.state?.userId) {
+      setUserId(location.state.userId);
+    } else {
+      console.warn('No userId provided');
+    }
   }, [driverName, location.state]);
 
-  // Fetch events from API when driverId is available
+  // Fetch driver data to get current stats with polling
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchDriverData = async (isInitialLoad = false) => {
+      if (!driverId || !userId) return;
+
+      try {
+        if (isInitialLoad) {
+          setIsLoadingDriver(true);
+        }
+        
+        const response = await fetch(`http://localhost:5001/drivers/${driverId}?userId=${userId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch driver data');
+        }
+
+        const data = await response.json();
+        console.log('Fetched driver data:', data);
+        
+        const driverData = data.driver;
+        
+        // Helper function to determine status based on value and type
+        const getStatus = (value, type) => {
+          switch (type) {
+            case 'heartRate':
+              if (value < 80) return "Good";
+              if (value < 100) return "Mild";
+              return "High";
+            case 'bloodOxygenLevel':
+              if (value >= 95) return "Good";
+              if (value >= 90) return "Mild";
+              return "High";
+            case 'speed':
+              if (value < 60) return "Good";
+              if (value < 80) return "Mild";
+              return "High";
+            default:
+              return "Good";
+          }
+        };
+
+        // Set current stats from driver data
+        setCurrentStats({
+          heartRate: driverData.heartRate || 0,
+          heartRateStatus: getStatus(driverData.heartRate || 0, 'heartRate'),
+          bloodOxygenLevel: driverData.bloodOxygenLevel || 0,
+          bloodOxygenStatus: getStatus(driverData.bloodOxygenLevel || 0, 'bloodOxygenLevel'),
+          speed: driverData.vehicleSpeed || 0,
+          speedStatus: getStatus(driverData.vehicleSpeed || 0, 'speed')
+        });
+      } catch (error) {
+        console.error('Error fetching driver data:', error);
+        // Only set defaults on initial load
+        if (isInitialLoad) {
+          setCurrentStats({
+            heartRate: 0,
+            heartRateStatus: "Good",
+            bloodOxygenLevel: 0,
+            bloodOxygenStatus: "Good",
+            speed: 0,
+            speedStatus: "Good"
+          });
+        }
+      } finally {
+        if (isInitialLoad) {
+          setIsLoadingDriver(false);
+        }
+      }
+    };
+
+    // Initial fetch
+    fetchDriverData(true);
+    
+    // Set up polling interval (every 2 seconds for real-time updates)
+    const pollInterval = setInterval(() => {
+      fetchDriverData(false);
+    }, 2000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(pollInterval);
+  }, [driverId, userId]);
+
+  // Fetch events from API when driverId is available with polling
+  useEffect(() => {
+    const fetchEvents = async (isInitialLoad = false) => {
       if (!driverId) return;
 
       try {
-        setIsLoadingEvents(true);
+        if (isInitialLoad) {
+          setIsLoadingEvents(true);
+        }
+        
         const response = await fetch(`http://localhost:5002/drivers/${driverId}/events`);
         
         if (!response.ok) {
@@ -138,9 +216,7 @@ const EventLog = () => {
         }
 
         const data = await response.json();
-        console.log('Fetched events:', data);
         
-        // Transform events to include UI-friendly fields with formatted dates/times
         const transformedEvents = data.events.map(event => ({
           ...event,
           date: formatDate(event.date),
@@ -153,76 +229,27 @@ const EventLog = () => {
         setEvents(transformedEvents);
       } catch (error) {
         console.error('Error fetching events:', error);
-        // If fetch fails, show empty array
-        setEvents([]);
+        if (isInitialLoad) {
+          setEvents([]);
+        }
       } finally {
-        setIsLoadingEvents(false);
+        if (isInitialLoad) {
+          setIsLoadingEvents(false);
+        }
       }
     };
 
-    fetchEvents();
+    // Initial fetch
+    fetchEvents(true);
+    
+    // Set up polling interval (every 3 seconds)
+    const pollInterval = setInterval(() => {
+      fetchEvents(false);
+    }, 3000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(pollInterval);
   }, [driverId]);
-
-  useEffect(() => {
-    const getStatus = (value, type) => {
-      switch (type) {
-        case 'heartRate':
-          if (value < 80) return "Good";
-          if (value < 100) return "Mild";
-          return "High";
-        case 'bloodOxygenLevel':
-          if (value >= 95) return "Good";
-          if (value >= 90) return "Mild";
-          return "High";
-        case 'speed':
-          if (value < 60) return "Good";
-          if (value < 80) return "Mild";
-          return "High";
-        default:
-          return "Good";
-      }
-    };
-
-    const updateStats = () => {
-      setCurrentStats((prevStats) => {
-        const newHeartRate = parseFloat(Math.max(
-          60,
-          Math.min(
-            120,
-            prevStats.heartRate + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 5
-          )
-        ).toFixed(0));
-        
-        const newBloodOxygenLevel = parseFloat(Math.max(
-          85,
-          Math.min(
-            100,
-            prevStats.bloodOxygenLevel + (Math.random() > 0.5 ? 0.5 : -0.5) * Math.random()
-          )
-        ).toFixed(1));
-        
-        const newSpeed = parseFloat(Math.max(
-          20,
-          Math.min(
-            100,
-            prevStats.speed + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 10
-          )
-        ).toFixed(0));
-
-        return {
-          heartRate: newHeartRate,
-          heartRateStatus: getStatus(newHeartRate, 'heartRate'),
-          bloodOxygenLevel: newBloodOxygenLevel,
-          bloodOxygenStatus: getStatus(newBloodOxygenLevel, 'bloodOxygenLevel'),
-          speed: newSpeed,
-          speedStatus: getStatus(newSpeed, 'speed')
-        };
-      });
-    };
-
-    const interval = setInterval(updateStats, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const toggleEvent = (eventId) => {
     setExpandedEvent(expandedEvent === eventId ? null : eventId);
@@ -306,10 +333,8 @@ const EventLog = () => {
 
       console.log('Event deleted successfully');
       
-      // Update local state
       setEvents(events.filter(event => event.eventId !== eventId));
       
-      // Close expanded view if it was open
       if (expandedEvent === eventId) {
         setExpandedEvent(null);
       }
@@ -376,31 +401,35 @@ Report Generated: ${new Date().toLocaleString()}
               <h1 className="driver-name">{driverName}</h1>
             </div>
 
-            <div className="metrics-container">
-              <div className="metric-card">
-                <h3>Heart Rate</h3>
-                <p className="metric-value">{currentStats.heartRate} BPM</p>
-                <div className={`status-badge ${currentStats.heartRateStatus.toLowerCase()}`}>
-                  {currentStats.heartRateStatus}
+            {isLoadingDriver ? (
+              <p>Loading driver stats...</p>
+            ) : (
+              <div className="metrics-container">
+                <div className="metric-card">
+                  <h3>Heart Rate</h3>
+                  <p className="metric-value">{currentStats.heartRate} BPM</p>
+                  <div className={`status-badge ${currentStats.heartRateStatus.toLowerCase()}`}>
+                    {currentStats.heartRateStatus}
+                  </div>
                 </div>
-              </div>
 
-              <div className="metric-card">
-                <h3>Blood Oxygen Level</h3>
-                <p className="metric-value">{currentStats.bloodOxygenLevel}%</p>
-                <div className={`status-badge ${currentStats.bloodOxygenStatus.toLowerCase()}`}>
-                  {currentStats.bloodOxygenStatus}
+                <div className="metric-card">
+                  <h3>Blood Oxygen Level</h3>
+                  <p className="metric-value">{currentStats.bloodOxygenLevel}%</p>
+                  <div className={`status-badge ${currentStats.bloodOxygenStatus.toLowerCase()}`}>
+                    {currentStats.bloodOxygenStatus}
+                  </div>
                 </div>
-              </div>
 
-              <div className="metric-card">
-                <h3>Vehicle Speed</h3>
-                <p className="metric-value">{currentStats.speed} km/h</p>
-                <div className={`status-badge ${currentStats.speedStatus.toLowerCase()}`}>
-                  {currentStats.speedStatus}
+                <div className="metric-card">
+                  <h3>Vehicle Speed</h3>
+                  <p className="metric-value">{currentStats.speed} km/h</p>
+                  <div className={`status-badge ${currentStats.speedStatus.toLowerCase()}`}>
+                    {currentStats.speedStatus}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="events-section">
