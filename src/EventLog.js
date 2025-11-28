@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import "./StyleSheets/index.css";
 
-// Helper function to generate unique event IDs
 const generateEventId = (driverName) => {
   return `event_${driverName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
 };
@@ -61,12 +60,12 @@ const formatTime = (timeStr) => {
   return timeStr; 
 };
 
-const getVideoUrl = (videoLink) => {
-  if (!videoLink) return '';
+const getImageUrl = (imageLink) => {
+  if (!imageLink) return '';
   
-  if (videoLink.startsWith('gs://')) {
+  if (imageLink.startsWith('gs://')) {
     const gsPattern = /gs:\/\/([^\/]+)\/(.+)/;
-    const match = videoLink.match(gsPattern);
+    const match = imageLink.match(gsPattern);
     if (match) {
       const bucket = match[1];
       const path = encodeURIComponent(match[2]);
@@ -74,7 +73,7 @@ const getVideoUrl = (videoLink) => {
     }
   }
   
-  return videoLink;
+  return imageLink;
 };
 
 const EventLog = () => {
@@ -117,7 +116,6 @@ const EventLog = () => {
     }
   }, [driverName, location.state]);
 
-  // Fetch driver data to get current stats with polling
   useEffect(() => {
     const fetchDriverData = async (isInitialLoad = false) => {
       if (!driverId || !userId) return;
@@ -138,7 +136,6 @@ const EventLog = () => {
         
         const driverData = data.driver;
         
-        // Helper function to determine status based on value and type
         const getStatus = (value, type) => {
           switch (type) {
             case 'heartRate':
@@ -158,18 +155,20 @@ const EventLog = () => {
           }
         };
 
-        // Set current stats from driver data
+        const roundedHeartRate = Math.round(driverData.heartRate || 0);
+        const roundedBloodOxygen = Math.round(driverData.bloodOxygenLevel || 0);
+        const roundedSpeed = Math.round(driverData.vehicleSpeed || 0);
+
         setCurrentStats({
-          heartRate: driverData.heartRate || 0,
-          heartRateStatus: getStatus(driverData.heartRate || 0, 'heartRate'),
-          bloodOxygenLevel: driverData.bloodOxygenLevel || 0,
-          bloodOxygenStatus: getStatus(driverData.bloodOxygenLevel || 0, 'bloodOxygenLevel'),
-          speed: driverData.vehicleSpeed || 0,
-          speedStatus: getStatus(driverData.vehicleSpeed || 0, 'speed')
+          heartRate: roundedHeartRate,
+          heartRateStatus: getStatus(roundedHeartRate, 'heartRate'),
+          bloodOxygenLevel: roundedBloodOxygen,
+          bloodOxygenStatus: getStatus(roundedBloodOxygen, 'bloodOxygenLevel'),
+          speed: roundedSpeed,
+          speedStatus: getStatus(roundedSpeed, 'speed')
         });
       } catch (error) {
         console.error('Error fetching driver data:', error);
-        // Only set defaults on initial load
         if (isInitialLoad) {
           setCurrentStats({
             heartRate: 0,
@@ -187,19 +186,15 @@ const EventLog = () => {
       }
     };
 
-    // Initial fetch
     fetchDriverData(true);
     
-    // Set up polling interval (every 2 seconds for real-time updates)
     const pollInterval = setInterval(() => {
       fetchDriverData(false);
     }, 2000);
     
-    // Cleanup interval on component unmount
     return () => clearInterval(pollInterval);
   }, [driverId, userId]);
 
-  // Fetch events from API when driverId is available with polling
   useEffect(() => {
     const fetchEvents = async (isInitialLoad = false) => {
       if (!driverId) return;
@@ -221,9 +216,11 @@ const EventLog = () => {
           ...event,
           date: formatDate(event.date),
           timeStamp: formatTime(event.timeStamp),
-          bloodOxygenLevel: event.bloodOxygenLevel || 98,
-          videoUrl: getVideoUrl(event.videoLink),
-          hasClip: !!event.videoLink
+          heartRate: Math.round(event.heartRate),
+          bloodOxygenLevel: Math.round(event.bloodOxygenLevel || 98),
+          vehicleSpeed: Math.round(event.vehicleSpeed),
+          imageUrl: getImageUrl(event.videoLink),
+          hasImage: !!event.videoLink
         }));
         
         setEvents(transformedEvents);
@@ -239,15 +236,12 @@ const EventLog = () => {
       }
     };
 
-    // Initial fetch
     fetchEvents(true);
     
-    // Set up polling interval (every 3 seconds)
     const pollInterval = setInterval(() => {
       fetchEvents(false);
     }, 3000);
     
-    // Cleanup interval on component unmount
     return () => clearInterval(pollInterval);
   }, [driverId]);
 
@@ -306,8 +300,8 @@ const EventLog = () => {
 
       const newEvent = {
         ...newEventData,
-        videoUrl: getVideoUrl(newEventData.videoLink),
-        hasClip: false
+        imageUrl: getImageUrl(newEventData.videoLink),
+        hasImage: false
       };
 
       setEvents([...events, newEvent]);
@@ -362,7 +356,7 @@ Severity: ${event.status}
 Heart Rate: ${event.heartRate} BPM
 Blood Oxygen Level: ${event.bloodOxygenLevel}%
 Vehicle Speed: ${event.vehicleSpeed} Km/h
-Video Clip Available: ${event.hasClip || event.videoLink ? 'Yes' : 'No'}
+Event Image Available: ${event.hasImage || event.videoLink ? 'Yes' : 'No'}
 
 ============================================
 Report Generated: ${new Date().toLocaleString()}
@@ -434,9 +428,6 @@ Report Generated: ${new Date().toLocaleString()}
 
           <div className="events-section">
             <h2>Events</h2>
-            <button className="add-event-test-button" onClick={addEvent}>
-              Add Event
-            </button>
             
             {isLoadingEvents ? (
               <p>Loading events...</p>
@@ -478,12 +469,23 @@ Report Generated: ${new Date().toLocaleString()}
                           <span>Time:</span>
                           <span>{event.timeStamp || 'N/A'}</span>
                         </div>
-                        {(event.hasClip || event.videoLink) && event.videoUrl && (
-                          <div className="video-container">
-                            <video controls width="100%">
-                              <source src={event.videoUrl} type="video/mp4" />
-                              Your browser does not support the video tag.
-                            </video>
+                        {(event.hasImage || event.videoLink) && event.imageUrl && (
+                          <div className="image-container" style={{ marginTop: '15px' }}>
+                            <img 
+                              src={event.imageUrl} 
+                              alt={`Event ${eventNumber} capture`}
+                              style={{ 
+                                width: '100%', 
+                                maxWidth: '600px',
+                                height: 'auto',
+                                borderRadius: '8px',
+                                display: 'block'
+                              }}
+                              onError={(e) => {
+                                console.error('Failed to load event image');
+                                e.target.style.display = 'none';
+                              }}
+                            />
                           </div>
                         )}
                         <div className="event-actions">
@@ -492,13 +494,6 @@ Report Generated: ${new Date().toLocaleString()}
                             onClick={() => downloadEventReport(event, eventNumber)}
                           >
                             Download Event Report
-                          </button>
-                          <button 
-                            className="delete-event-button" 
-                            onClick={() => deleteEvent(event.eventId)}
-                            style={{ marginLeft: '10px', backgroundColor: '#dc3545' }}
-                          >
-                            Delete Event
                           </button>
                         </div>
                       </div>

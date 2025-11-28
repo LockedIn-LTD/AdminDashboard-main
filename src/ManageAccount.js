@@ -140,7 +140,7 @@ const ManageAccount = () => {
       }
 
       console.log("Account updated successfully");
-      alert("Changes saved successfully!");
+      //alert("Changes saved successfully!");
       navigate("/dashboard");
 
     } catch (err) {

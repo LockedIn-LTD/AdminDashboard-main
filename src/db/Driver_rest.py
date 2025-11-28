@@ -20,8 +20,15 @@ def create_new_driver(driver_id, name, phone_number, user_id, profile_pic="", pr
     """
     Creates a new driver in the database with all driver fields.
     NOW REQUIRES user_id to link driver to user.
+    Automatically sets driving based on status.
     """
     try:
+        # Auto-set driving based on status
+        if status != "Idle":
+            driving = True
+        else:
+            driving = False
+            
         # Create driver with user_id
         driver = Driver(name, phone_number, profile_pic, product_id, user_id)
         
@@ -74,6 +81,7 @@ def edit_driver_field(field_to_change, new_value, driver_id, user_id):
     """
     Edits a specific field of a driver.
     NOW VALIDATES that the driver belongs to the user.
+    If status is changed, automatically updates driving field.
     """
     try:
         existing_driver = db_handler.get_document(DRIVER_COLLECTION, driver_id)
@@ -83,7 +91,13 @@ def edit_driver_field(field_to_change, new_value, driver_id, user_id):
         if existing_driver.get('userId') != user_id:
             raise Exception("Unauthorized: You don't have permission to edit this driver")
         
-        update_fields = {field_to_change: new_value}        
+        update_fields = {field_to_change: new_value}
+        
+        # If status is being updated, also update driving accordingly
+        if field_to_change == "status":
+            should_be_driving = new_value != "Idle"
+            update_fields["driving"] = should_be_driving
+        
         db_handler.update_document(DRIVER_COLLECTION, driver_id, update_fields)
         
         return update_fields
@@ -245,6 +259,7 @@ def create_driver():
     """
     Creates a new driver in the database.
     NOW REQUIRES userId in payload.
+    Automatically sets driving based on status.
     Expected JSON payload: {
         "driverId": "string",
         "userId": "string",  <- NEW REQUIRED FIELD
@@ -252,6 +267,7 @@ def create_driver():
         "phoneNumber": "string",
         "profilePic": "string",
         "productId": 0,
+        "status": "string",  <- Driving will be auto-set based on this
         ...
     }
     """
@@ -264,8 +280,9 @@ def create_driver():
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
         # Validate status if provided
-        valid_statuses = ["Unstable", "Severe", "LockedIn", "Idle"]
-        if 'status' in data and data['status'] not in valid_statuses:
+        valid_statuses = ["Unstable", "Severe", "LockedIn", "Idle", "Critical", "Mild", "Stable"]
+        status = data.get('status', 'Idle')
+        if status not in valid_statuses:
             return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
         
         driver_data = create_new_driver(
@@ -283,8 +300,8 @@ def create_driver():
             data.get('bloodOxygenLevel', 0),
             data.get('vehicleSpeed', 0),
             data.get('videoLink', ''),
-            data.get('driving', False),
-            data.get('status', 'Idle')
+            data.get('driving', False),  # Will be overridden based on status
+            status
         )
         
         return jsonify({
@@ -300,6 +317,7 @@ def update_driver(driver_id):
     """
     Updates specific fields of a driver in the database.
     NOW REQUIRES userId in payload for authorization.
+    If status is updated, driving is automatically updated as well.
     Expected JSON payload: {
         "userId": "string",  <- NEW REQUIRED FIELD
         "fieldToChange": "string",
@@ -317,7 +335,7 @@ def update_driver(driver_id):
         
         # Validate status if updating status field
         if data['fieldToChange'] == 'status':
-            valid_statuses = ["Unstable", "Severe", "LockedIn", "Idle"]
+            valid_statuses = ["Unstable", "Severe", "LockedIn", "Idle", "Critical", "Mild", "Stable"]
             if data['newValue'] not in valid_statuses:
                 return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
         
