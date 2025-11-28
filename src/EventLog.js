@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
 import "./StyleSheets/index.css";
 
 const generateEventId = (driverName) => {
@@ -240,7 +241,7 @@ const EventLog = () => {
     
     const pollInterval = setInterval(() => {
       fetchEvents(false);
-    }, 3000);
+    }, 1000);
     
     return () => clearInterval(pollInterval);
   }, [driverId]);
@@ -339,38 +340,51 @@ const EventLog = () => {
   };
 
   const downloadEventReport = (event, eventNumber) => {
-    const reportContent = `
-EVENT REPORT
-============================================
-
-Driver: ${driverName}
-Driver ID: ${driverId}
-Event Number: ${eventNumber}
-Event ID: ${event.eventId}
-Date: ${event.date}
-Time: ${event.timeStamp || 'N/A'}
-
-EVENT DETAILS
-============================================
-Severity: ${event.status}
-Heart Rate: ${event.heartRate} BPM
-Blood Oxygen Level: ${event.bloodOxygenLevel}%
-Vehicle Speed: ${event.vehicleSpeed} Km/h
-Event Image Available: ${event.hasImage || event.videoLink ? 'Yes' : 'No'}
-
-============================================
-Report Generated: ${new Date().toLocaleString()}
-    `.trim();
-
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${driverName}_Event${eventNumber}_${event.date.replace(/\s/g, '_')}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.text('DriveSense Event Report', 105, 20, { align: 'center' });
+    doc.setFont(undefined, 'normal');
+    
+    doc.setLineWidth(0.5);
+    doc.line(20, 25, 190, 25);
+    
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Driver Information', 20, 38);
+    doc.setFont(undefined, 'normal');
+    
+    doc.setFontSize(12);
+    doc.text(`Driver: ${driverName}`, 20, 48);
+    doc.text(`Driver ID: ${driverId}`, 20, 56);
+    doc.text(`Event Number: ${eventNumber}`, 20, 64);
+    doc.text(`Event ID: ${event.eventId}`, 20, 72);
+    doc.text(`Date: ${event.date}`, 20, 80);
+    doc.text(`Time: ${event.timeStamp || 'N/A'}`, 20, 88);
+    
+    doc.setLineWidth(0.3);
+    doc.line(20, 95, 190, 95);
+    
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Event Details', 20, 105);
+    doc.setFont(undefined, 'normal');
+    
+    doc.setFontSize(12);
+    doc.text(`Severity: ${event.status}`, 20, 115);
+    doc.text(`Heart Rate: ${event.heartRate} BPM`, 20, 125);
+    doc.text(`Blood Oxygen Level: ${event.bloodOxygenLevel}%`, 20, 135);
+    doc.text(`Vehicle Speed: ${event.vehicleSpeed} Km/h`, 20, 145);
+    
+    doc.setLineWidth(0.3);
+    doc.line(20, 155, 190, 155);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Report Generated: ${new Date().toLocaleString()}`, 20, 280);
+    
+    doc.save(`${driverName}_Event${eventNumber}_${event.date.replace(/\s/g, '_')}.pdf`);
   };
 
   return (
