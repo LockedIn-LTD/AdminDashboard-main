@@ -65,10 +65,60 @@ const Dashboard = () => {
             return driver;
           });
           
-          setDrivers(driversWithIds);
+          const processedDrivers = await Promise.all(
+            driversWithIds.map(async (driver) => {
+              const shouldBeDriving = driver.status !== "Idle";
+              const currentlyDriving = driver.driving === true || driver.driving === "Yes";
+              
+              if (shouldBeDriving && !currentlyDriving) {
+                try {
+                  await fetch(`http://localhost:5001/drivers/${driver.driverId}`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      userId: currentUserId,
+                      fieldToChange: 'driving',
+                      newValue: true
+                    })
+                  });
+                  return { ...driver, driving: true };
+                } catch (error) {
+                  console.error('Error updating driving status:', error);
+                  return driver;
+                }
+              }
+              
+              if (!shouldBeDriving && currentlyDriving) {
+                try {
+                  await fetch(`http://localhost:5001/drivers/${driver.driverId}`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      userId: currentUserId,
+                      fieldToChange: 'driving',
+                      newValue: false
+                    })
+                  });
+                  // Update local state
+                  return { ...driver, driving: false };
+                } catch (error) {
+                  console.error('Error updating driving status:', error);
+                  return driver;
+                }
+              }
+              
+              return driver;
+            })
+          );
+          
+          setDrivers(processedDrivers);
           
           if (isInitialLoad) {
-            console.log('Loaded', driversWithIds.length, 'drivers for user:', currentUserId);
+            console.log('Loaded', processedDrivers.length, 'drivers for user:', currentUserId);
           }
         } else {
           setDrivers([]);
@@ -335,17 +385,26 @@ const Dashboard = () => {
             filteredDrivers.map((driver) => {
               const getStatusColor = (status) => {
                 switch(status) {
-                  case "Severe":
+                  case "Critical":
                     return "red";
-                  case "Unstable":
+                  case "CRITICAL":
+                    return "red";
+                  case "Mild":
                     return "yellow";
-                  case "LockedIn":
+                  case "MILD":
+                    return "yellow";
+                  case "Stable":
+                    return "green";
+                  case "STABLE":
                     return "green";
                   case "Idle":
                   default:
                     return "gray";
                 }
               };
+              
+              // Determine driving status based on status field
+              const isDriving = driver.status !== "Idle";
               
               return (
               <div 
@@ -370,7 +429,7 @@ const Dashboard = () => {
                 />
                 <h3>{driver.name}</h3>
                 <p>Status: {driver.status || 'Unknown'}</p>
-                <p>Driving: {driver.driving === true || driver.driving === "Yes" ? "Yes" : "No"}</p>
+                <p>Driving: {isDriving ? "Yes" : "No"}</p>
                 <div className="card-buttons" onClick={(e) => e.stopPropagation()}>
                   <button onClick={() => handleEditDriver(driver)}>
                     Edit Driver

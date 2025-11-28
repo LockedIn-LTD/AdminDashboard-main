@@ -141,7 +141,7 @@ const AddDriver = () => {
       const result = await response.json();
       console.log('Driver created successfully:', result);
 
-      alert('Driver added successfully!');
+      //alert('Driver added successfully!');
 
       navigate("/dashboard");
     } catch (error) {

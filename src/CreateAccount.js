@@ -90,7 +90,7 @@ const CreateAccount = () => {
       }
 
       console.log("Account created successfully:", data);
-      alert("Account created successfully!");
+      //alert("Account created successfully!");
       
       // Store user ID in localStorage for future use
       localStorage.setItem('currentUserId', userId);

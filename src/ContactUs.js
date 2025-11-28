@@ -35,7 +35,7 @@ const ContactUs = () => {
         ).then(
             (response) => {
                 console.log("Email sent successfully", response);
-                alert("Message sent successfully!");
+                //alert("Message sent successfully!");
                 setFormData({firstName: "", lastName: "", email: "", message: "" });
             },
             (error) => {
@@ -112,9 +112,9 @@ const ContactUs = () => {
                 
                 <div className="contact-info-bar">
                     <div className="contact-info-content">
-                        <span><i className="fas fa-phone"></i> +1 (123) 456 7890</span>
-                        <span><i className="fas fa-location-dot"></i> 123 Apple St, Ottawa, ON, K1N 5N2</span>
-                        <span><i className="fas fa-envelope"></i> contactdrivesense@gmail.com</span>
+                        <span><i className="fas fa-phone"></i> +1 (613) 418 7290</span>
+                        <span><i className="fas fa-location-dot"></i> 123 Apple St, Ottawa, ON, K1N 4N2</span>
+                        <span><i className="fas fa-envelope"></i>drivesense306@gmail.com</span>
                         <span><i className="fas fa-clock"></i> 9:00 am - 5.00 pm</span>
                     </div>
                 </div>
